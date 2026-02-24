@@ -1,0 +1,324 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shared Cloud Calendar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
+  <div class="w-full max-w-5xl bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between px-6 py-4 border-b border-slate-200 bg-white gap-4">
+      <div>
+        <h2 id="current-month-year" class="text-2xl font-bold text-slate-800">Month Year</h2>
+        <div id="sync-status" class="text-xs text-amber-500 font-medium flex items-center gap-2">
+          <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i>
+          <span>Connecting…</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 md:gap-4">
+        <button id="unlock-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Unlock editing
+        </button>
+
+        <button id="today-btn" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Today
+        </button>
+
+        <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1">
+          <button id="prev-month" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+          </button>
+          <button id="next-month" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Days of Week -->
+    <div class="grid grid-cols-7 bg-slate-50 border-b border-slate-200">
+      <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Sun</div>
+      <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Mon</div>
+      <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Tue</div>
+      <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Wed</div>
+      <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Thu</div>
+      <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Fri</div>
+      <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Sat</div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div id="calendar-grid" class="grid grid-cols-7 auto-rows-[120px] bg-slate-200 gap-px">
+      <!-- injected -->
+    </div>
+  </div>
+
+  <!-- Edit Event Modal -->
+  <div id="event-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-slate-800" id="modal-title">Add/Edit</h3>
+        <button id="close-modal" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <input type="hidden" id="event-date-key" />
+        <div class="mb-4">
+          <label for="event-text" class="block text-sm font-medium text-slate-700 mb-2">Notes for this day</label>
+          <textarea id="event-text" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-shadow" placeholder="What's happening?"></textarea>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button id="delete-event" class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+            Clear
+          </button>
+          <button id="save-event" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">
+            Save to Cloud
+          </button>
+        </div>
+        <p id="edit-hint" class="mt-3 text-xs text-slate-500"></p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+    // 1) Fill this in (Firebase Console -> Project settings -> Your apps -> Web app)
+    const firebaseConfig = {
+      apiKey: 'PASTE_ME',
+      authDomain: 'PASTE_ME',
+      projectId: 'PASTE_ME',
+      storageBucket: 'PASTE_ME',
+      messagingSenderId: 'PASTE_ME',
+      appId: 'PASTE_ME'
+    };
+
+    // 2) This is the Firestore path namespace for your calendar
+    const CALENDAR_APP_ID = 'shared-calendar-v1';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // State
+    let user = null;
+    let currentDate = new Date();
+    let events = {}; // { 'YYYY-MM-DD': 'text' }
+    let canEdit = false;
+
+    // DOM
+    const calendarGrid = document.getElementById('calendar-grid');
+    const currentMonthYear = document.getElementById('current-month-year');
+    const syncStatus = document.getElementById('sync-status');
+    const eventModal = document.getElementById('event-modal');
+    const eventText = document.getElementById('event-text');
+    const eventDateKey = document.getElementById('event-date-key');
+    const editHint = document.getElementById('edit-hint');
+
+    const unlockBtn = document.getElementById('unlock-btn');
+    const saveBtn = document.getElementById('save-event');
+    const clearBtn = document.getElementById('delete-event');
+
+    function setStatus(kind, text) {
+      if (kind === 'loading') {
+        syncStatus.className = 'text-xs text-amber-500 font-medium flex items-center gap-2';
+        syncStatus.innerHTML = '<i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i><span>' + text + '</span>';
+      } else if (kind === 'ok') {
+        syncStatus.className = 'text-xs text-emerald-600 font-medium flex items-center gap-2';
+        syncStatus.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3"></i><span>' + text + '</span>';
+      } else {
+        syncStatus.className = 'text-xs text-red-600 font-medium flex items-center gap-2';
+        syncStatus.innerHTML = '<i data-lucide="alert-circle" class="w-3 h-3"></i><span>' + text + '</span>';
+      }
+      lucide.createIcons();
+    }
+
+    function updateEditUi() {
+      unlockBtn.textContent = canEdit ? 'Editing unlocked' : 'Unlock editing';
+      unlockBtn.disabled = canEdit;
+      unlockBtn.classList.toggle('opacity-50', canEdit);
+
+      // save/clear are only meaningful when unlocked
+      saveBtn.disabled = !canEdit;
+      clearBtn.disabled = !canEdit;
+      saveBtn.classList.toggle('opacity-50', !canEdit);
+      clearBtn.classList.toggle('opacity-50', !canEdit);
+
+      editHint.textContent = canEdit ? 'Editing is unlocked on this browser.' : 'Read-only. Tap “Unlock editing” and enter passcode to edit.';
+    }
+
+    async function initAuth() {
+      setStatus('loading', 'Signing in…');
+      try {
+        // Read-only users still need a Firebase auth session to read (depending on your rules).
+        await signInAnonymously(auth);
+      } catch (err) {
+        console.error(err);
+        setStatus('error', 'Auth failed');
+      }
+    }
+
+    onAuthStateChanged(auth, (u) => {
+      user = u;
+      if (user) setupRealtimeSync();
+    });
+
+    function eventsCollection() {
+      return collection(db, 'artifacts', CALENDAR_APP_ID, 'public', 'data', 'events');
+    }
+
+    function setupRealtimeSync() {
+      setStatus('loading', 'Syncing…');
+      onSnapshot(
+        eventsCollection(),
+        (snapshot) => {
+          const next = {};
+          snapshot.forEach((d) => (next[d.id] = d.data().text || ''));
+          events = next;
+          renderCalendar();
+          setStatus('ok', canEdit ? 'Cloud synced (editable)' : 'Cloud synced (read-only)');
+        },
+        (error) => {
+          console.error(error);
+          setStatus('error', 'Sync error (check Firestore rules)');
+        }
+      );
+    }
+
+    async function unlockEditing() {
+      const passcode = window.prompt('Enter edit passcode');
+      if (!passcode) return;
+
+      setStatus('loading', 'Unlocking…');
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ passcode })
+        });
+        if (!res.ok) throw new Error('Bad passcode');
+        const data = await res.json();
+        if (!data?.token) throw new Error('No token');
+
+        await signInWithCustomToken(auth, data.token);
+        canEdit = true;
+        updateEditUi();
+        setStatus('ok', 'Cloud synced (editable)');
+      } catch (e) {
+        console.error(e);
+        canEdit = false;
+        updateEditUi();
+        setStatus('error', 'Wrong passcode');
+      }
+    }
+
+    async function saveEvent() {
+      if (!canEdit) return;
+      const date = eventDateKey.value;
+      const text = eventText.value.trim();
+      if (!user || !date) return;
+
+      const ref = doc(db, 'artifacts', CALENDAR_APP_ID, 'public', 'data', 'events', date);
+      if (text) {
+        await setDoc(ref, { text, lastUpdated: new Date().toISOString(), updatedBy: user.uid }, { merge: true });
+      } else {
+        await deleteDoc(ref);
+      }
+      closeModal();
+    }
+
+    async function deleteDayEvent() {
+      if (!canEdit) return;
+      const date = eventDateKey.value;
+      if (!user || !date) return;
+      await deleteDoc(doc(db, 'artifacts', CALENDAR_APP_ID, 'public', 'data', 'events', date));
+      closeModal();
+    }
+
+    function renderCalendar() {
+      calendarGrid.innerHTML = '';
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      currentMonthYear.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+      const today = new Date();
+
+      const formatDate = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+      for (let i = 0; i < firstDay; i++) createDayCell(daysInPrevMonth - firstDay + i + 1, true);
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = formatDate(year, month, d);
+        const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
+        createDayCell(d, false, dateKey, isToday);
+      }
+      const totalUsed = firstDay + daysInMonth;
+      for (let i = 1; i <= 42 - totalUsed; i++) createDayCell(i, true);
+
+      lucide.createIcons();
+    }
+
+    function createDayCell(day, isFaded, dateKey, isToday) {
+      const cell = document.createElement('div');
+      cell.className = `bg-white p-2 flex flex-col group relative border-none ${isFaded ? 'text-slate-300' : 'text-slate-700 cursor-pointer hover:bg-indigo-50/50'}`;
+
+      const num = document.createElement('span');
+      num.className = `text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-indigo-600 text-white' : ''}`;
+      num.textContent = day;
+      cell.appendChild(num);
+
+      if (dateKey && events[dateKey]) {
+        const preview = document.createElement('div');
+        preview.className = 'text-[10px] leading-tight text-slate-600 line-clamp-3 overflow-hidden bg-indigo-50 p-1 rounded border-l-2 border-indigo-400';
+        preview.textContent = events[dateKey];
+        cell.appendChild(preview);
+      }
+
+      if (!isFaded) cell.onclick = () => openModal(dateKey);
+      calendarGrid.appendChild(cell);
+    }
+
+    function openModal(dateKey) {
+      eventDateKey.value = dateKey;
+      eventText.value = events[dateKey] || '';
+      document.getElementById('modal-title').innerText = `Events for ${dateKey}`;
+      eventModal.classList.remove('hidden');
+      updateEditUi();
+      eventText.focus();
+    }
+
+    function closeModal() {
+      eventModal.classList.add('hidden');
+    }
+
+    // Wire UI
+    document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
+    document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
+    document.getElementById('today-btn').onclick = () => { currentDate = new Date(); renderCalendar(); };
+    document.getElementById('close-modal').onclick = closeModal;
+    unlockBtn.onclick = unlockEditing;
+    saveBtn.onclick = saveEvent;
+    clearBtn.onclick = deleteDayEvent;
+
+    // Start
+    lucide.createIcons();
+    updateEditUi();
+    initAuth();
+    renderCalendar();
+  </script>
+</body>
+</html>

@@ -30,15 +30,20 @@
           Unlock editing
         </button>
 
+        <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1" role="group" aria-label="Calendar view">
+          <button id="view-month" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm">Month</button>
+          <button id="view-week" class="px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100">Week</button>
+        </div>
+
         <button id="today-btn" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
           Today
         </button>
 
         <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1">
-          <button id="prev-month" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
+          <button id="prev" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
           </button>
-          <button id="next-month" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
+          <button id="next" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
             <i data-lucide="chevron-right" class="w-5 h-5"></i>
           </button>
         </div>
@@ -96,14 +101,14 @@
     import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
     // 1) Fill this in (Firebase Console -> Project settings -> Your apps -> Web app)
-const firebaseConfig = {
-  apiKey: "AIzaSyAYc0LgnDRRtBC-JFBc2XLU-yxFEaxaduM",
-  authDomain: "teo-calendar-4958b.firebaseapp.com",
-  projectId: "teo-calendar-4958b",
-  storageBucket: "teo-calendar-4958b.firebasestorage.app",
-  messagingSenderId: "468616135260",
-  appId: "1:468616135260:web:0d1c6bebcad79f1dd7dc99"
-};
+    const firebaseConfig = {
+      apiKey: 'PASTE_ME',
+      authDomain: 'PASTE_ME',
+      projectId: 'PASTE_ME',
+      storageBucket: 'PASTE_ME',
+      messagingSenderId: 'PASTE_ME',
+      appId: 'PASTE_ME'
+    };
 
     // 2) This is the Firestore path namespace for your calendar
     const CALENDAR_APP_ID = 'shared-calendar-v1';
@@ -117,6 +122,7 @@ const firebaseConfig = {
     let currentDate = new Date();
     let events = {}; // { 'YYYY-MM-DD': 'text' }
     let canEdit = false;
+    let viewMode = "month"; // "month" | "week"
 
     // DOM
     const calendarGrid = document.getElementById('calendar-grid');
@@ -126,6 +132,9 @@ const firebaseConfig = {
     const eventText = document.getElementById('event-text');
     const eventDateKey = document.getElementById('event-date-key');
     const editHint = document.getElementById('edit-hint');
+
+    const viewMonthBtn = document.getElementById('view-month');
+    const viewWeekBtn = document.getElementById('view-week');
 
     const unlockBtn = document.getElementById('unlock-btn');
     const saveBtn = document.getElementById('save-event');
@@ -249,6 +258,33 @@ const firebaseConfig = {
 
     function renderCalendar() {
       calendarGrid.innerHTML = '';
+
+      if (viewMode === 'month') {
+        renderMonth();
+      } else {
+        renderWeek();
+      }
+
+      lucide.createIcons();
+    }
+
+    function startOfWeek(date) {
+      // Week starts on Sunday.
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - d.getDay());
+      return d;
+    }
+
+    function sameDay(a, b) {
+      return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    }
+
+    function formatDateKey(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function renderMonth() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
       currentMonthYear.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
@@ -268,8 +304,25 @@ const firebaseConfig = {
       }
       const totalUsed = firstDay + daysInMonth;
       for (let i = 1; i <= 42 - totalUsed; i++) createDayCell(i, true);
+    }
 
-      lucide.createIcons();
+    function renderWeek() {
+      const start = startOfWeek(currentDate);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+
+      const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+      const title = `${fmt.format(start)} – ${fmt.format(end)}, ${end.getFullYear()}`;
+      currentMonthYear.textContent = title;
+
+      const today = new Date();
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const dateKey = formatDateKey(d);
+        const isToday = sameDay(d, today);
+        createDayCell(d.getDate(), false, dateKey, isToday);
+      }
     }
 
     function createDayCell(day, isFaded, dateKey, isToday) {
@@ -306,11 +359,40 @@ const firebaseConfig = {
     }
 
     // Wire UI
-    document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); };
-    document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); };
-    document.getElementById('today-btn').onclick = () => { currentDate = new Date(); renderCalendar(); };
+    document.getElementById('prev').onclick = () => {
+      if (viewMode === 'month') {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+      } else {
+        currentDate.setDate(currentDate.getDate() - 7);
+      }
+      renderCalendar();
+    };
+    document.getElementById('next').onclick = () => {
+      if (viewMode === 'month') {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      } else {
+        currentDate.setDate(currentDate.getDate() + 7);
+      }
+      renderCalendar();
+    };
+    document.getElementById('today-btn').onclick = () => {
+      currentDate = new Date();
+      renderCalendar();
+    }; renderCalendar(); };
     document.getElementById('close-modal').onclick = closeModal;
     unlockBtn.onclick = unlockEditing;
+
+    function setView(mode) {
+      viewMode = mode;
+      const monthActive = mode === 'month';
+      viewMonthBtn.className = monthActive ? 'px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm' : 'px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100';
+      viewWeekBtn.className = !monthActive ? 'px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm' : 'px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100';
+      renderCalendar();
+    }
+
+    viewMonthBtn.onclick = () => setView('month');
+    viewWeekBtn.onclick = () => setView('week');
+
     saveBtn.onclick = saveEvent;
     clearBtn.onclick = deleteDayEvent;
 

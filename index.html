@@ -37,10 +37,6 @@
           Unlock editing
         </button>
 
-        <button id="import-2026-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
-          Import SG+MOE Holidays 2026
-        </button>
-
         <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1" role="group" aria-label="Calendar view">
           <button id="view-month" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm">Month</button>
           <button id="view-week" class="px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100">Week</button>
@@ -110,21 +106,18 @@
     </div>
   </div>
 
+  <!-- Load firebase config from config.js so you only fill it once -->
+  <script src="./config.js"></script>
+
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
     import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    // 1) Fill this in (Firebase Console -> Project settings -> Your apps -> Web app)
-const firebaseConfig = {
-  apiKey: "AIzaSyAYc0LgnDRRtBC-JFBc2XLU-yxFEaxaduM",
-  authDomain: "teo-calendar-4958b.firebaseapp.com",
-  projectId: "teo-calendar-4958b",
-  storageBucket: "teo-calendar-4958b.firebasestorage.app",
-  messagingSenderId: "468616135260",
-  appId: "1:468616135260:web:0d1c6bebcad79f1dd7dc99"
-};
-
+    const firebaseConfig = window.FIREBASE_CONFIG;
+    if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('PASTE')) {
+      console.error('Missing FIREBASE_CONFIG. Fill config.js');
+    }
 
     // 2) This is the Firestore path namespace for your calendar
     // Each person gets their own calendar namespace (separate data in Firestore).
@@ -170,7 +163,6 @@ const firebaseConfig = {
     const viewWeekBtn = document.getElementById('view-week');
 
     const unlockBtn = document.getElementById('unlock-btn');
-    const import2026Btn = document.getElementById('import-2026-btn');
     const saveBtn = document.getElementById('save-event');
     const clearBtn = document.getElementById('delete-event');
 
@@ -200,9 +192,6 @@ const firebaseConfig = {
       clearBtn.classList.toggle('opacity-50', !canEdit);
 
       editHint.textContent = canEdit ? 'Editing is unlocked on this browser.' : 'Read-only. Tap “Unlock editing” and enter passcode to edit.';
-
-      import2026Btn.disabled = !canEdit;
-      import2026Btn.classList.toggle('opacity-50', !canEdit);
     }
 
     async function initAuth() {
@@ -476,43 +465,6 @@ const firebaseConfig = {
       eventModal.classList.add('hidden');
     }
 
-    
-    const IMPORT_DATA_2026 = [{"date": "2026-01-01", "text": "Public Holiday: New Year's Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-02-17", "text": "Public Holiday: Chinese New Year", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-02-18", "text": "Public Holiday: Chinese New Year", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-21", "text": "Public Holiday: Hari Raya Puasa", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-04-03", "text": "Public Holiday: Good Friday", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-05-01", "text": "Public Holiday: Labour Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-05-27", "text": "Public Holiday: Hari Raya Haji", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-05-31", "text": "Public Holiday: Vesak Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-01", "text": "Public Holiday (in lieu): Vesak Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-08-09", "text": "Public Holiday: National Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-08-10", "text": "Public Holiday (in lieu): National Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-08", "text": "Public Holiday: Deepavali", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-09", "text": "Public Holiday (in lieu): Deepavali", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-25", "text": "Public Holiday: Christmas Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-14", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-15", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-16", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-17", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-18", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-19", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-20", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-21", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-22", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-05-30", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-05-31", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-01", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-02", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-03", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-04", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-05", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-06", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-07", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-08", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-09", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-10", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-11", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-12", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-13", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-14", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-15", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-16", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-17", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-18", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-19", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-20", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-21", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-22", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-23", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-24", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-25", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-26", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-27", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-06-28", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-05", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-06", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-07", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-08", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-09", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-10", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-11", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-12", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-13", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-21", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-22", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-23", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-24", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-25", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-26", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-27", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-28", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-29", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-11-30", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-01", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-02", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-03", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-04", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-05", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-06", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-07", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-08", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-09", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-10", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-11", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-12", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-13", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-14", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-15", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-16", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-17", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-18", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-19", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-20", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-21", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-22", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-23", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-24", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-25", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-26", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-27", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-28", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-29", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-30", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-12-31", "text": "School Vacation", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-07-06", "text": "School Holiday: Youth Day (in lieu)", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-09-04", "text": "School Holiday: Teachers' Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-10-02", "text": "School Holiday (Primary): Children's Day", "users": ["shiqi", "jovan", "asher", "winson"]}, {"date": "2026-03-23", "text": "School Day Off (in lieu): Hari Raya Puasa", "users": ["shiqi", "jovan", "asher", "winson"]}];
-
-    function normalizeLines(s) {
-      return (s || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
-    }
-
-    async function importHolidays2026() {
-      if (!canEdit) return;
-      const ok = window.confirm('Import Singapore public holidays + MOE primary school holidays for 2026?\n\nThis will create/update ~107 dates.');
-      if (!ok) return;
-
-      setStatus('loading', 'Importing 2026…');
-
-      // Batch sequentially to avoid rate limits.
-      let count = 0;
-      for (const item of IMPORT_DATA_2026) {
-        const dateKey = item.date;
-        const existing = events[dateKey] || { text: '', users: [] };
-
-        const lines = normalizeLines(existing.text);
-        if (!lines.includes(item.text)) lines.push(item.text);
-
-        // Always tag as "all users"
-        const users = Array.from(new Set([...(existing.users || []), ...(item.users || [])]));
-
-        const ref = doc(db, 'artifacts', APP_ID, 'public', 'data', 'events', dateKey);
-        await setDoc(ref, {
-          text: lines.join('\n'),
-          users,
-          lastUpdated: new Date().toISOString(),
-          updatedBy: user?.uid || null
-        }, { merge: true });
-
-        count++;
-      }
-
       setStatus('ok', `Imported ${count} dates (2026)`);
     }
 // Wire UI
@@ -538,7 +490,6 @@ const firebaseConfig = {
     };
     document.getElementById('close-modal').onclick = closeModal;
     unlockBtn.onclick = unlockEditing;
-    import2026Btn.onclick = importHolidays2026;
 
     function setView(mode) {
       viewMode = mode;

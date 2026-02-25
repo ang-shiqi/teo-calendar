@@ -499,6 +499,7 @@
             const isPublicHoliday = s.includes('public holiday');
             const isCompetition = s.includes('competition');
             const isSpelling = s.includes('spelling');
+            const isSkating = s.includes('skating');
             const isExam = s.includes('psle') || s.includes('weighted assessment') || /\bwa\d*\b/i.test(line) || s.includes('eoy') || s.includes('exam');
             const isBirthday = s.includes('birthday');
             const isSchool = s.includes('school holiday') || s.includes('school vacation') || s.includes('school day off');
@@ -515,6 +516,7 @@
 
             if (isPublicHoliday) return 'bg-red-50 text-red-700 border-red-400';
             if (isCompetition) return 'bg-amber-100 text-amber-950 border-amber-500';
+            if (isSkating) return 'bg-teal-100 text-teal-950 border-teal-500';
             if (isSpelling) return 'bg-purple-50 text-purple-700 border-purple-400';
             if (isExam) return 'bg-purple-50 text-purple-700 border-purple-400';
             if (isBirthday) return 'bg-pink-50 text-pink-700 border-pink-400';

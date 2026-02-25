@@ -945,19 +945,11 @@
 
           // Stickers: SUPER EXAM
           const hasExam = !!firstMatch((s) => s.includes('exam') || s.includes('psle') || s.includes('wa'));
-          const paper = document.querySelector('.scrapbook-paper');
-          if (paper) {
-            const existing = paper.querySelector('.sticker-exam');
-            if (hasExam) {
-              if (!existing) {
-                const st = document.createElement('div');
-                st.className = 'sticker sticker-exam';
-                st.textContent = 'SUPER EXAM!';
-                paper.appendChild(st);
-              }
-            } else {
-              if (existing) existing.remove();
-            }
+          if (hasExam) {
+            const st = document.createElement('div');
+            st.className = 'sticker sticker-exam';
+            st.textContent = 'SUPER EXAM!';
+            cell.appendChild(st);
           }
 
           // Render separate chips so different items can keep their own colors

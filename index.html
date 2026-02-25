@@ -494,6 +494,18 @@
           // Render separate chips so different items can keep their own colors
           const chipBase = 'text-[10px] leading-tight px-1.5 py-1 rounded border-l-2';
 
+          function formatTimes12h(line) {
+            // Display-only: convert 24h times like 18:30 -> 6.30pm
+            return (line || '').replace(/\b([01]\d|2[0-3]):([0-5]\d)\b/g, (_, hh, mm) => {
+              const h24 = Number(hh);
+              const m = String(mm);
+              const suffix = h24 >= 12 ? 'pm' : 'am';
+              let h12 = h24 % 12;
+              if (h12 === 0) h12 = 12;
+              return `${h12}.${m}${suffix}`;
+            });
+          }
+
           function chipClassForLine(line) {
             const s = (line || '').toLowerCase();
             const isPublicHoliday = s.includes('public holiday');
@@ -544,7 +556,7 @@
             const chip = document.createElement('div');
             chip.className = `${chipBase} ${chipClassForLine(item.text)} whitespace-normal break-words`;
             chip.style.wordBreak = 'break-word';
-            chip.textContent = item.text;
+            chip.textContent = formatTimes12h(item.text);
             stack.appendChild(chip);
           });
 

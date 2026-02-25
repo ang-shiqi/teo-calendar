@@ -24,28 +24,28 @@
         </div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 md:gap-4 justify-end">
-        <select id="calendar-select" class="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg border border-slate-200 hover:bg-slate-200">
+      <div class="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:gap-4 sm:justify-end">
+        <select id="calendar-select" class="w-full sm:w-auto px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg border border-slate-200 hover:bg-slate-200">
           <option value="ALL">All</option>
           <option value="shiqi">Shi Qi</option>
           <option value="jovan">Jovan</option>
           <option value="asher">Asher</option>
           <option value="winson">Winson</option>
         </select>
-        <button id="unlock-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+        <button id="unlock-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
           Unlock editing
         </button>
 
-        <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1" role="group" aria-label="Calendar view">
+        <div class="w-full sm:w-auto flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1" role="group" aria-label="Calendar view">
           <button id="view-month" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm">Month</button>
           <button id="view-week" class="px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100">Week</button>
         </div>
 
-        <button id="today-btn" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+        <button id="today-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
           Today
         </button>
 
-        <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1">
+        <div class="w-full sm:w-auto flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1 justify-between">
           <button id="prev" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
             <i data-lucide="chevron-left" class="w-5 h-5"></i>
           </button>

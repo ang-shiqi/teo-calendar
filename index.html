@@ -391,7 +391,7 @@
             const isBirthday = s.includes('birthday');
             const isSchool = s.includes('school holiday') || s.includes('school vacation') || s.includes('school day off');
             const isNoClimbing = s === 'no climbing class' || s.includes('no climbing class');
-            const isClimbing = s.startsWith('climbing class');
+            const isClimbing = s.startsWith('climbing class') || s.includes('speed training at oth');
 
             if (isPublicHoliday) return 'bg-red-50 text-red-700 border-red-400';
             if (isExam) return 'bg-purple-50 text-purple-700 border-purple-400';

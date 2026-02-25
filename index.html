@@ -382,7 +382,10 @@
       <div class="rounded-2xl bg-[#eef6ff] border border-[#cfe3ff] shadow-sm p-4">
         <div class="flex items-center justify-between gap-3 mb-2">
           <div class="text-sm sm:text-base font-bold text-slate-800">☁️ Jovan's Stretching Routine ☁️</div>
-          <div id="jovan-streak" class="text-xs sm:text-sm font-extrabold text-slate-700">🔥 0 Day Streak</div>
+          <div class="flex items-center gap-2">
+            <div id="jovan-cloud" class="w-14 h-8"></div>
+            <div id="jovan-streak" class="text-xs sm:text-sm font-extrabold text-slate-700">🔥 0 Day Streak</div>
+          </div>
         </div>
         <div class="text-xs sm:text-sm text-slate-700 leading-relaxed space-y-2">
           <div>
@@ -471,7 +474,7 @@
                   <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
                 </svg>
               </div>
-              <div id="stretch-success-icon" class="mt-2 text-4xl">☁️</div>
+              <div class="mx-auto w-28 h-16" id="stretch-success-icon"></div>
               <div class="mt-2 text-2xl font-extrabold text-slate-800">Daily Routine Complete! ✨</div>
               <div id="stretch-streak" class="mt-2 text-xl font-extrabold text-slate-900">🔥 0 Day Streak!</div>
               <div id="stretch-science" class="mt-3 text-sm font-bold text-slate-700"></div>
@@ -569,14 +572,126 @@
     let stretchRemote = { streakCount: 0, lastCompletedDate: null, highestUnlockedLevel: null, loaded: false };
 
     const milestoneMap = [
-      { days: 3, key: 'misty', title: 'Getting Misty', icon: '☁️😊', science: 'Brain Shortcut — Your brain now remembers the moves easily.' },
-      { days: 7, key: 'warrior', title: 'Week One Warrior', icon: '☁️🥾', science: 'Stronger Springs — Your knee tendons are getting tougher for big landings.' },
-      { days: 14, key: 'sender', title: 'The Send-er', icon: '☁️😎🧗', science: 'Super Reach — Your hips are unlocking for high foot-holds.' },
-      { days: 21, key: 'nimbus', title: 'Nimbus Master', icon: '🌈✨☁️👑', science: 'Auto-Pilot Mode — You’re officially a pro at recovery.' },
-      { days: 50, key: 'mountain', title: 'Mountain King', icon: '⛰️☁️', science: 'Climbing Armor — Your body is now injury-proofed.' },
-      { days: 75, key: 'cape', title: 'Gravity Defier', icon: '🦸✨☁️', science: 'Power Spring — More pop for dynos and explosive moves.' },
-      { days: 100, key: 'titan', title: 'Titan of the Wall', icon: '🌌☁️🏆', science: 'Unbreakable — A permanent foundation for elite climbing.' },
+      { days: 3, key: 'misty', title: 'Getting Misty', icon: 'misty', science: 'Brain Shortcut — Your brain now remembers the moves easily.' },
+      { days: 7, key: 'warrior', title: 'Week One Warrior', icon: 'warrior', science: 'Stronger Springs — Your knee tendons are getting tougher for big landings.' },
+      { days: 14, key: 'sender', title: 'The Send-er', icon: 'sender', science: 'Super Reach — Your hips are unlocking for high foot-holds.' },
+      { days: 21, key: 'nimbus', title: 'Nimbus Master', icon: 'nimbus', science: 'Auto-Pilot Mode — You’re officially a pro at recovery.' },
+      { days: 50, key: 'mountain', title: 'Mountain King', icon: 'mountain', science: 'Climbing Armor — Your body is now injury-proofed.' },
+      { days: 75, key: 'cape', title: 'Gravity Defier', icon: 'cape', science: 'Power Spring — More pop for dynos and explosive moves.' },
+      { days: 100, key: 'titan', title: 'Titan of the Wall', icon: 'titan', science: 'Unbreakable — A permanent foundation for elite climbing.' },
     ];
+
+    function cloudSvg(kind) {
+      // Cute inline SVGs (small, mobile-friendly). `kind` matches milestoneMap.icon.
+      const base = (extra) => `
+        <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+          <path d="M55 90c-20 0-35-12-35-28 0-14 11-26 26-28 6-16 22-27 41-27 20 0 37 12 43 29 16 2 28 14 28 29 0 17-15 30-34 30H55z"
+                fill="#e0f2fe" stroke="#93c5fd" stroke-width="7" stroke-linejoin="round"/>
+          ${extra || ''}
+        </svg>`;
+
+      if (kind === 'misty') {
+        return base(`
+          <circle cx="92" cy="70" r="4" fill="#334155"/>
+          <circle cx="120" cy="70" r="4" fill="#334155"/>
+          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <circle cx="78" cy="78" r="7" fill="#fda4af" opacity="0.85"/>
+          <circle cx="134" cy="78" r="7" fill="#fda4af" opacity="0.85"/>
+        `);
+      }
+
+      if (kind === 'warrior') {
+        return base(`
+          <circle cx="92" cy="70" r="4" fill="#334155"/>
+          <circle cx="120" cy="70" r="4" fill="#334155"/>
+          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M78 92 h20 v12 a8 8 0 0 1-8 8 h-4 a8 8 0 0 1-8-8z" fill="#a78bfa" stroke="#6d28d9" stroke-width="4"/>
+          <path d="M108 92 h20 v12 a8 8 0 0 1-8 8 h-4 a8 8 0 0 1-8-8z" fill="#a78bfa" stroke="#6d28d9" stroke-width="4"/>
+        `);
+      }
+
+      if (kind === 'sender') {
+        return base(`
+          <circle cx="92" cy="70" r="4" fill="#334155"/>
+          <circle cx="120" cy="70" r="4" fill="#334155"/>
+          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <rect x="70" y="56" width="70" height="18" rx="9" fill="#111827" opacity="0.85"/>
+          <rect x="86" y="86" width="36" height="18" rx="9" fill="#fb7185" stroke="#be123c" stroke-width="4"/>
+        `);
+      }
+
+      if (kind === 'nimbus') {
+        return `
+          <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+            <defs>
+              <linearGradient id="rb" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0" stop-color="#f9a8d4"/>
+                <stop offset="0.33" stop-color="#93c5fd"/>
+                <stop offset="0.66" stop-color="#a7f3d0"/>
+                <stop offset="1" stop-color="#fde68a"/>
+              </linearGradient>
+            </defs>
+            <path d="M55 90c-20 0-35-12-35-28 0-14 11-26 26-28 6-16 22-27 41-27 20 0 37 12 43 29 16 2 28 14 28 29 0 17-15 30-34 30H55z"
+                  fill="url(#rb)" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+            <path d="M82 40 l18-18 18 18" fill="#fbbf24" stroke="#a16207" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="92" cy="70" r="4" fill="#334155"/>
+            <circle cx="120" cy="70" r="4" fill="#334155"/>
+            <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M150 46 l6 6 l-6 6 l-6-6z" fill="#fff" opacity="0.9"/>
+            <path d="M40 46 l6 6 l-6 6 l-6-6z" fill="#fff" opacity="0.9"/>
+          </svg>`;
+      }
+
+      if (kind === 'mountain') {
+        return base(`
+          <circle cx="92" cy="70" r="4" fill="#334155"/>
+          <circle cx="120" cy="70" r="4" fill="#334155"/>
+          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M70 108 L100 70 L130 108 Z" fill="#cbd5e1" stroke="#64748b" stroke-width="5"/>
+          <path d="M93 85 L100 70 L107 85" fill="#fff" opacity="0.9"/>
+        `);
+      }
+
+      if (kind === 'cape') {
+        return base(`
+          <circle cx="92" cy="70" r="4" fill="#334155"/>
+          <circle cx="120" cy="70" r="4" fill="#334155"/>
+          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M128 58 Q165 74 150 104 Q125 98 112 84" fill="#f472b6" stroke="#be185d" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M44 46 l6 6 l-6 6 l-6-6z" fill="#fde68a" opacity="0.9"/>
+        `);
+      }
+
+      if (kind === 'titan') {
+        return `
+          <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+            <defs>
+              <linearGradient id="gal" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0" stop-color="#1e293b"/>
+                <stop offset="0.5" stop-color="#4c1d95"/>
+                <stop offset="1" stop-color="#0ea5e9"/>
+              </linearGradient>
+            </defs>
+            <path d="M55 90c-20 0-35-12-35-28 0-14 11-26 26-28 6-16 22-27 41-27 20 0 37 12 43 29 16 2 28 14 28 29 0 17-15 30-34 30H55z"
+                  fill="url(#gal)" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+            <circle cx="70" cy="46" r="2" fill="#fff"/>
+            <circle cx="90" cy="36" r="2" fill="#fff"/>
+            <circle cx="120" cy="44" r="2" fill="#fff"/>
+            <circle cx="140" cy="60" r="2" fill="#fff"/>
+            <circle cx="92" cy="70" r="4" fill="#fff"/>
+            <circle cx="120" cy="70" r="4" fill="#fff"/>
+            <path d="M96 80 Q105 88 114 80" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M150 86 h20 v16 a8 8 0 0 1-8 8 h-4 a8 8 0 0 1-8-8z" fill="#fbbf24" stroke="#a16207" stroke-width="5"/>
+          </svg>`;
+      }
+
+      // default cloud
+      return base(`
+        <circle cx="92" cy="70" r="4" fill="#334155"/>
+        <circle cx="120" cy="70" r="4" fill="#334155"/>
+        <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+      `);
+    }
 
     function currentMilestone(streak) {
       let m = null;
@@ -1074,12 +1189,12 @@
 
       // Update streak display (use remote if loaded, else local fallback)
       const streakEl = document.getElementById('jovan-streak');
-      if (streakEl) {
-        const { count } = getStretchStreak();
-        const ms = currentMilestone(count);
-        const name = ms ? ` · ${ms.title}` : '';
-        streakEl.textContent = `🔥 ${count} Day Streak${name}`;
-      }
+      const cloudEl = document.getElementById('jovan-cloud');
+      const { count } = getStretchStreak();
+      const ms = currentMilestone(count);
+      const name = ms ? ` · ${ms.title}` : '';
+      if (streakEl) streakEl.textContent = `🔥 ${count} Day Streak${name}`;
+      if (cloudEl) cloudEl.innerHTML = cloudSvg(ms?.icon || 'base');
 
       // Update footer button state
       const btn = document.getElementById('start-stretches');
@@ -1101,8 +1216,9 @@
       if (opt) {
         const { count } = getStretchStreak();
         const ms = currentMilestone(count);
-        const icon = ms?.icon || (done ? '🌈✨☁️' : '☁️');
-        opt.textContent = `Jovan ${icon}`;
+        // <option> can't render SVG; keep a simple text indicator here.
+        const tag = ms ? `(${ms.days})` : (done ? '✓' : '');
+        opt.textContent = `Jovan ${tag}`;
       }
     }
 
@@ -1330,7 +1446,10 @@
       if (streakEl) streakEl.textContent = `🔥 ${count} Day Streak!`;
 
       const ms = currentMilestone(count);
-      if (iconEl) iconEl.textContent = ms?.icon || '☁️';
+      if (iconEl) {
+        const kind = ms?.icon || 'base';
+        iconEl.innerHTML = cloudSvg(kind);
+      }
       if (sciEl) sciEl.textContent = ms ? `Science Power-Up: ${ms.science}` : 'Science Power-Up: Consistency is building your recovery engine.';
 
       // Track highest unlock
@@ -1871,7 +1990,7 @@
         card.style.minHeight = '88px';
         card.innerHTML = `
           <div class="flex items-start gap-3">
-            <div class="text-3xl">${unlocked ? m.icon : '☁️'}</div>
+            <div class="w-16 h-10">${unlocked ? cloudSvg(m.icon) : '<div class="w-full h-full opacity-30">'+cloudSvg('base')+'</div>'}</div>
             <div>
               <div class="text-sm font-extrabold text-slate-800">${m.days} Days — ${m.title}</div>
               <div class="mt-1 text-xs font-bold text-slate-600">${unlocked ? m.science : 'Locked — keep going!'}</div>

@@ -381,8 +381,13 @@
           const hasPublicHoliday = lines.some(l => l.toLowerCase().includes('public holiday'));
           const hasSchoolHoliday = lines.some(l => l.toLowerCase().includes('school holiday') || l.toLowerCase().includes('school vacation') || l.toLowerCase().includes('school day off'));
           const hasExam = lines.some(l => {
-            const s = l.toLowerCase();
-            return s.includes('psle') || s.includes('weighted assessment') || s.includes('wa1') || s.includes('wa2') || s.includes('exam');
+            const s = (l || '').toLowerCase();
+            // WA / WA1 / WA2 / WA3..., PSLE, EOY, etc.
+            return s.includes('psle')
+              || s.includes('weighted assessment')
+              || /\bwa\d*\b/i.test(l)
+              || s.includes('eoy')
+              || s.includes('exam');
           });
 
           const base = 'text-[10px] leading-tight line-clamp-3 overflow-hidden p-1 rounded border-l-2';

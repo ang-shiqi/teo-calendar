@@ -601,13 +601,7 @@
       }
 
       if (kind === 'sender') {
-        return base(`
-          <circle cx="92" cy="70" r="4" fill="#334155"/>
-          <circle cx="120" cy="70" r="4" fill="#334155"/>
-          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <rect x="70" y="56" width="70" height="18" rx="9" fill="#111827" opacity="0.85"/>
-          <rect x="86" y="86" width="36" height="18" rx="9" fill="#fb7185" stroke="#be123c" stroke-width="4"/>
-        `);
+        return `<img src="/assets/clouds/sender.png" alt="Sender Cloud" class="w-full h-full object-contain" />`;
       }
 
       if (kind === 'nimbus') {

@@ -434,9 +434,10 @@
                 <div id="stretch-time" class="text-5xl sm:text-6xl font-extrabold tracking-tight text-slate-800">0:00</div>
               </div>
 
-              <div class="mt-6 grid grid-cols-3 gap-3">
+              <div class="mt-6 grid grid-cols-4 gap-3">
                 <button id="stretch-back" class="px-3 py-3 rounded-2xl bg-sky-100 hover:bg-sky-200 text-slate-800 font-extrabold disabled:opacity-50">Back</button>
-                <button id="stretch-pause" class="px-3 py-3 rounded-2xl bg-pink-200 hover:bg-pink-300 text-slate-900 font-extrabold">Pause</button>
+                <button id="stretch-start" class="px-3 py-3 rounded-2xl bg-emerald-200 hover:bg-emerald-300 text-slate-900 font-extrabold">Start</button>
+                <button id="stretch-pause" class="px-3 py-3 rounded-2xl bg-pink-200 hover:bg-pink-300 text-slate-900 font-extrabold disabled:opacity-50">Pause</button>
                 <button id="stretch-next" class="px-3 py-3 rounded-2xl bg-teal-100 hover:bg-teal-200 text-slate-800 font-extrabold disabled:opacity-50">Next</button>
               </div>
 
@@ -882,6 +883,7 @@
 
     let stretchOpen = false;
     let stretchPaused = false;
+    let stretchStarted = false;
     let stretchIdx = 0;
     let stretchRemaining = 0;
     let stretchTimer = null;
@@ -904,6 +906,7 @@
       const btnBack = document.getElementById('stretch-back');
       const btnNext = document.getElementById('stretch-next');
       const btnPause = document.getElementById('stretch-pause');
+      const btnStart = document.getElementById('stretch-start');
 
       const step = STRETCH_STEPS[stretchIdx];
       if (title) title.textContent = step?.label || 'Done!';
@@ -916,7 +919,13 @@
 
       if (btnBack) btnBack.disabled = stretchIdx <= 0;
       if (btnNext) btnNext.disabled = stretchIdx >= STRETCH_STEPS.length - 1;
-      if (btnPause) btnPause.textContent = stretchPaused ? 'Resume' : 'Pause';
+      if (btnStart) {
+        btnStart.textContent = stretchStarted ? 'Restart' : 'Start';
+      }
+      if (btnPause) {
+        btnPause.textContent = stretchPaused ? 'Resume' : 'Pause';
+        btnPause.disabled = !stretchStarted;
+      }
     }
 
     function openStretch() {
@@ -926,12 +935,13 @@
       overlay.classList.remove('hidden');
       stretchOpen = true;
       stretchPaused = false;
+      stretchStarted = false;
       stretchIdx = 0;
       stretchRemaining = STRETCH_STEPS[0]?.seconds || 0;
       renderStretchUI();
       if (stretchTimer) clearInterval(stretchTimer);
       stretchTimer = setInterval(() => {
-        if (!stretchOpen || stretchPaused) return;
+        if (!stretchOpen || stretchPaused || !stretchStarted) return;
         if (stretchRemaining > 1) {
           stretchRemaining -= 1;
           renderStretchUI();
@@ -953,6 +963,8 @@
       const overlay = document.getElementById('stretch-overlay');
       if (overlay) overlay.classList.add('hidden');
       stretchOpen = false;
+      stretchStarted = false;
+      stretchPaused = false;
       if (stretchTimer) {
         clearInterval(stretchTimer);
         stretchTimer = null;
@@ -975,7 +987,22 @@
       }
     }
 
+    function stretchStartOrRestart() {
+      if (!stretchStarted) {
+        stretchStarted = true;
+        stretchPaused = false;
+      } else {
+        // Restart from beginning
+        stretchStarted = true;
+        stretchPaused = false;
+        stretchIdx = 0;
+        stretchRemaining = STRETCH_STEPS[0]?.seconds || 0;
+      }
+      renderStretchUI();
+    }
+
     function stretchTogglePause() {
+      if (!stretchStarted) return;
       stretchPaused = !stretchPaused;
       renderStretchUI();
     }
@@ -1464,6 +1491,8 @@
     if (stretchBackBtn) stretchBackBtn.onclick = stretchBack;
     const stretchNextBtn = document.getElementById('stretch-next');
     if (stretchNextBtn) stretchNextBtn.onclick = stretchNext;
+    const stretchStartBtn = document.getElementById('stretch-start');
+    if (stretchStartBtn) stretchStartBtn.onclick = stretchStartOrRestart;
     const stretchPauseBtn = document.getElementById('stretch-pause');
     if (stretchPauseBtn) stretchPauseBtn.onclick = stretchTogglePause;
 

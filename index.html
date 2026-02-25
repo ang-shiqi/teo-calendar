@@ -380,13 +380,21 @@
 
           const hasPublicHoliday = lines.some(l => l.toLowerCase().includes('public holiday'));
           const hasSchoolHoliday = lines.some(l => l.toLowerCase().includes('school holiday') || l.toLowerCase().includes('school vacation') || l.toLowerCase().includes('school day off'));
+          const hasExam = lines.some(l => {
+            const s = l.toLowerCase();
+            return s.includes('psle') || s.includes('weighted assessment') || s.includes('wa1') || s.includes('wa2') || s.includes('exam');
+          });
 
           const base = 'text-[10px] leading-tight line-clamp-3 overflow-hidden p-1 rounded border-l-2';
 
-          // Priority: Public Holiday (red) > School (orange) > normal (indigo)
+          // Priority: Public Holiday (red) > Exams (purple) > School (orange) > normal (indigo)
           const colorClass = hasPublicHoliday
             ? 'bg-red-50 text-red-700 border-red-400'
-            : (hasSchoolHoliday ? 'bg-orange-50 text-orange-700 border-orange-400' : 'bg-indigo-50 text-slate-600 border-indigo-400');
+            : (hasExam
+                ? 'bg-purple-50 text-purple-700 border-purple-400'
+                : (hasSchoolHoliday
+                    ? 'bg-orange-50 text-orange-700 border-orange-400'
+                    : 'bg-indigo-50 text-slate-600 border-indigo-400'));
 
           preview.className = `${base} ${colorClass}`;
           preview.textContent = ev.text;

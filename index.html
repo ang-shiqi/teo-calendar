@@ -114,7 +114,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, documentId } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
     const firebaseConfig = window.FIREBASE_CONFIG;
     if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('PASTE')) {
@@ -146,6 +146,8 @@
     let currentDate = new Date();
     let events = {}; // { 'YYYY-MM-DD': { items: Array<{ text: string, users: string[] }>, text: string, users: string[] } }
     let unsubscribeSync = null;
+    let syncDebounceTimer = null;
+    let lastRangeKey = null;
     let canEdit = false;
     let viewMode = "month"; // "month" | "week"
     let editingItems = [];
@@ -272,16 +274,87 @@
       return collection(db, 'artifacts', APP_ID, 'public', 'data', 'events');
     }
 
-    function setupRealtimeSync() {
-      setStatus('loading', 'Syncing…');
+    function rangeForCurrentView() {
+      // Returns { startKey, endKey, rangeKey, cacheMonthKey? }
+      if (viewMode === 'week') {
+        const start = startOfWeek(currentDate);
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        const startKey = formatDateKey(start);
+        const endKey = formatDateKey(end);
+        return { startKey, endKey, rangeKey: `week:${startKey}..${endKey}` };
+      }
 
-      // Switch listener when calendar changes
+      // Month view
+      const y = currentDate.getFullYear();
+      const m = currentDate.getMonth();
+      const monthStart = new Date(y, m, 1);
+      const monthEnd = new Date(y, m + 1, 0);
+      const startKey = formatDateKey(monthStart);
+      const endKey = formatDateKey(monthEnd);
+      const monthKey = `${y}-${String(m + 1).padStart(2, '0')}`;
+      return { startKey, endKey, rangeKey: `month:${monthKey}`, cacheMonthKey: monthKey };
+    }
+
+    function cacheKeyForMonth(monthKey) {
+      return `teo-calendar:${APP_ID}:events:${monthKey}`;
+    }
+
+    function loadMonthCache(monthKey) {
+      try {
+        const raw = localStorage.getItem(cacheKeyForMonth(monthKey));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        const ts = Number(parsed?.ts);
+        const data = parsed?.data;
+        if (!ts || !data || typeof data !== 'object') return null;
+
+        // TTL: 7 days
+        const ageMs = Date.now() - ts;
+        if (ageMs > 7 * 24 * 60 * 60 * 1000) return null;
+        return data;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function saveMonthCache(monthKey, data) {
+      try {
+        localStorage.setItem(cacheKeyForMonth(monthKey), JSON.stringify({ ts: Date.now(), data }));
+      } catch (_) {}
+    }
+
+    function setupRealtimeSync() {
+      const { startKey, endKey, rangeKey, cacheMonthKey } = rangeForCurrentView();
+
+      if (rangeKey !== lastRangeKey) {
+        setStatus('loading', 'Syncing…');
+      }
+
+      // Month cache: render immediately from cache (if any)
+      if (cacheMonthKey) {
+        const cached = loadMonthCache(cacheMonthKey);
+        if (cached && rangeKey !== lastRangeKey) {
+          events = cached;
+          renderCalendar();
+        }
+      }
+
+      // Switch listener when range changes
       if (typeof unsubscribeSync === 'function') {
         try { unsubscribeSync(); } catch (_) {}
       }
 
-      unsubscribeSync = onSnapshot(
+      lastRangeKey = rangeKey;
+
+      const q = query(
         eventsCollection(),
+        where(documentId(), '>=', startKey),
+        where(documentId(), '<=', endKey)
+      );
+
+      unsubscribeSync = onSnapshot(
+        q,
         (snapshot) => {
           const next = {};
           snapshot.forEach((d) => {
@@ -289,6 +362,7 @@
             next[d.id] = eventFromFirestoreDoc(data);
           });
           events = next;
+          if (cacheMonthKey) saveMonthCache(cacheMonthKey, next);
           renderCalendar();
           setStatus('ok', canEdit ? 'Cloud synced (editable)' : 'Cloud synced (read-only)');
         },
@@ -297,6 +371,13 @@
           setStatus('error', 'Sync error (check Firestore rules)');
         }
       );
+    }
+
+    function scheduleSync() {
+      if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => {
+        if (user) setupRealtimeSync();
+      }, 250);
     }
 
     async function unlockEditing() {
@@ -376,6 +457,9 @@
       }
 
       lucide.createIcons();
+
+      // Sync only the visible range (debounced) to reduce Firestore reads.
+      scheduleSync();
     }
 
     function startOfWeek(date) {

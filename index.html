@@ -44,6 +44,9 @@
         <button id="today-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
           Today
         </button>
+        <button id="jump-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Jump…
+        </button>
 
         <div class="w-full sm:w-auto flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1 justify-between">
           <button id="prev" class="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors">
@@ -168,6 +171,7 @@
     const unlockBtn = document.getElementById('unlock-btn');
     const saveBtn = document.getElementById('save-event');
     const clearBtn = document.getElementById('delete-event');
+    const jumpBtn = document.getElementById('jump-btn');
 
     function setStatus(kind, text) {
       if (kind === 'loading') {
@@ -330,6 +334,30 @@
 
     function formatDateKey(d) {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function jumpTo() {
+      // Accept: YYYY-MM or YYYY-MM-DD
+      const raw = window.prompt('Jump to (YYYY-MM or YYYY-MM-DD), e.g. 2026-07 or 2026-07-15');
+      if (!raw) return;
+      const s = raw.trim();
+      const m1 = s.match(/^(\d{4})-(\d{2})$/);
+      const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      let d;
+      if (m2) {
+        d = new Date(Number(m2[1]), Number(m2[2]) - 1, Number(m2[3]));
+      } else if (m1) {
+        d = new Date(Number(m1[1]), Number(m1[2]) - 1, 1);
+      } else {
+        window.alert('Invalid format. Use YYYY-MM or YYYY-MM-DD');
+        return;
+      }
+      if (Number.isNaN(d.getTime())) {
+        window.alert('Invalid date');
+        return;
+      }
+      currentDate = d;
+      renderCalendar();
     }
 
     function renderMonth() {
@@ -554,6 +582,7 @@
       currentDate = new Date();
       renderCalendar();
     };
+    jumpBtn.onclick = jumpTo;
     document.getElementById('close-modal').onclick = closeModal;
     unlockBtn.onclick = unlockEditing;
 

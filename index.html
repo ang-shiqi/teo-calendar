@@ -376,8 +376,7 @@
         if (visible && ev.text) {
           const preview = document.createElement('div');
           const t = (ev.text || '');
-          const lines = t.split(/
-+/).map(x => x.trim()).filter(Boolean);
+          const lines = t.split(/\n+/).map(x => x.trim()).filter(Boolean);
 
           const hasPublicHoliday = lines.some(l => l.toLowerCase().includes('public holiday'));
           const hasSchoolHoliday = lines.some(l => l.toLowerCase().includes('school holiday') || l.toLowerCase().includes('school vacation') || l.toLowerCase().includes('school day off'));

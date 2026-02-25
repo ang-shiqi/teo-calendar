@@ -613,13 +613,7 @@
       }
 
       if (kind === 'cape') {
-        return base(`
-          <circle cx="92" cy="70" r="4" fill="#334155"/>
-          <circle cx="120" cy="70" r="4" fill="#334155"/>
-          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M128 58 Q165 74 150 104 Q125 98 112 84" fill="#f472b6" stroke="#be185d" stroke-width="5" stroke-linejoin="round"/>
-          <path d="M44 46 l6 6 l-6 6 l-6-6z" fill="#fde68a" opacity="0.9"/>
-        `);
+        return `<img src="/assets/clouds/cape.png" alt="Cape Cloud" class="w-full h-full object-contain" />`;
       }
 
       if (kind === 'titan') {

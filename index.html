@@ -103,37 +103,98 @@
     .scrapbook-pin.bl { left: 18px; bottom: -12px; top: auto; background: radial-gradient(circle at 30% 30%, #fff, #b5ff7c 40%, #4ea31d 85%); }
     .scrapbook-pin.br { right: 18px; bottom: -12px; top: auto; background: radial-gradient(circle at 30% 30%, #fff, #ffd36e 40%, #d08a00 85%); }
 
-    /* Washi tape banner for month header */
+    /* Curved ribbon banner for month header */
     .washi-banner {
-      position: relative;
-      display: inline-block;
-      padding: 6px 16px;
-      border-radius: 14px;
-      background: repeating-linear-gradient(
-        135deg,
-        rgba(255, 182, 213, 0.95),
-        rgba(255, 182, 213, 0.95) 12px,
-        rgba(255, 210, 232, 0.95) 12px,
-        rgba(255, 210, 232, 0.95) 24px
-      );
-      box-shadow: 0 10px 18px rgba(15,23,42,0.12);
-      border: 1px solid rgba(219, 39, 119, 0.18);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translateY(-6px);
     }
-    .washi-banner::before,
-    .washi-banner::after {
-      content: "";
-      position: absolute;
-      top: 50%;
-      width: 14px;
-      height: 22px;
-      transform: translateY(-50%);
-      background: rgba(255, 255, 255, 0.40);
-      filter: blur(0.2px);
-    }
-    .washi-banner::before { left: -8px; border-radius: 8px 0 0 8px; transform: translateY(-50%) rotate(-6deg); }
-    .washi-banner::after { right: -8px; border-radius: 0 8px 8px 0; transform: translateY(-50%) rotate(6deg); }
+    .washi-banner svg { display: block; }
 
     /* Decorative clouds + sun */
+
+    /* Wooden frame around the paper */
+    .wood-frame {
+      padding: 18px;
+      border-radius: 26px;
+      background: linear-gradient(180deg, #c58a52, #a86b3c);
+      box-shadow: 0 22px 55px rgba(15,23,42,0.25);
+      position: relative;
+    }
+    .wood-frame::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0));
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    /* Term ribbon pinned to top-right of paper */
+    .term-ribbon {
+      position: absolute;
+      top: 34px;
+      right: -10px;
+      padding: 8px 14px;
+      background: #ff86b8;
+      color: #7a1f44;
+      font-weight: 700;
+      border-radius: 12px;
+      transform: rotate(10deg);
+      box-shadow: 0 10px 18px rgba(15,23,42,0.16);
+      border: 1px solid rgba(219,39,119,0.22);
+      z-index: 4;
+    }
+    .term-ribbon::after {
+      content: "";
+      position: absolute;
+      right: 10px;
+      bottom: -10px;
+      width: 14px;
+      height: 14px;
+      transform: rotate(45deg);
+      background: #ff86b8;
+      border-right: 1px solid rgba(219,39,119,0.22);
+      border-bottom: 1px solid rgba(219,39,119,0.22);
+    }
+
+    /* Stickers */
+    .sticker {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px;
+      box-shadow: 0 12px 18px rgba(15,23,42,0.16);
+      border: 2px solid rgba(15,23,42,0.06);
+      z-index: 3;
+      transform: rotate(-6deg);
+      font-weight: 700;
+      color: #7a1f44;
+    }
+    .sticker-exam {
+      background: #fff6bf;
+      border-color: rgba(122,31,68,0.18);
+      transform: rotate(8deg);
+    }
+    .sticker-wa1 {
+      background: #d6ecff;
+      border-color: rgba(31,141,184,0.20);
+    }
+
+    .cell-illustration {
+      width: 100%;
+      height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 6px;
+      opacity: 0.98;
+    }
+
     .kawaii-cloud {
       position: absolute;
       top: -18px;
@@ -189,19 +250,25 @@
 </head>
 
 <body class="scrapbook text-slate-800 font-sans antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
-  <div class="w-full max-w-5xl scrapbook-paper">
-    <!-- 4-corner push pins -->
-    <div class="scrapbook-pin tl" aria-hidden="true"></div>
-    <div class="scrapbook-pin tr" aria-hidden="true"></div>
-    <div class="scrapbook-pin bl" aria-hidden="true"></div>
-    <div class="scrapbook-pin br" aria-hidden="true"></div>
+  <!-- Top-of-screen environment decorations -->
+  <div class="pointer-events-none fixed left-6 top-3 z-0 kawaii-cloud" style="transform: scale(0.95); opacity: 0.95" aria-hidden="true"></div>
+  <div class="pointer-events-none fixed left-44 top-1 z-0 kawaii-cloud" style="transform: scale(1.25); opacity: 0.95" aria-hidden="true"></div>
+  <div class="pointer-events-none fixed left-[60%] top-2 z-0 kawaii-cloud" style="transform: scale(1.05); opacity: 0.92" aria-hidden="true"></div>
+  <div class="pointer-events-none fixed right-10 top-4 z-0 kawaii-cloud" style="transform: scale(0.85); opacity: 0.92" aria-hidden="true"></div>
+  <div class="pointer-events-none fixed right-6 top-6 z-0 kawaii-sun" aria-hidden="true"><div class="kawaii-sun-face">^‿^</div></div>
 
-    <div class="paper-inner overflow-hidden">
-      <!-- Clouds along the very top of the screen -->
-      <div class="pointer-events-none fixed left-6 top-3 z-0 kawaii-cloud" style="transform: scale(0.95); opacity: 0.95"></div>
-      <div class="pointer-events-none fixed left-44 top-1 z-0 kawaii-cloud" style="transform: scale(1.25); opacity: 0.95"></div>
-      <div class="pointer-events-none fixed left-[60%] top-2 z-0 kawaii-cloud" style="transform: scale(1.05); opacity: 0.92"></div>
-      <div class="pointer-events-none fixed right-10 top-4 z-0 kawaii-cloud" style="transform: scale(0.85); opacity: 0.92"></div>
+  <div class="w-full max-w-5xl wood-frame">
+    <div class="scrapbook-paper">
+      <!-- 4-corner push pins -->
+      <div class="scrapbook-pin tl" aria-hidden="true"></div>
+      <div class="scrapbook-pin tr" aria-hidden="true"></div>
+      <div class="scrapbook-pin bl" aria-hidden="true"></div>
+      <div class="scrapbook-pin br" aria-hidden="true"></div>
+
+      <!-- Term ribbon -->
+      <div class="term-ribbon" aria-hidden="true">TERM 1</div>
+
+      <div class="paper-inner overflow-hidden">
     <!-- Header -->
     <div class="relative flex flex-col md:flex-row md:items-center justify-between px-6 py-6 border-b border-slate-200 bg-white gap-4">
       <!-- Decorative clouds + sun -->
@@ -209,7 +276,15 @@
       <div class="kawaii-cloud" style="left: 170px; transform: scale(0.8); opacity: 0.95; top: -10px" aria-hidden="true"></div>
       <div class="kawaii-sun" aria-hidden="true"><div class="kawaii-sun-face">^‿^</div></div>
       <div>
-        <h2 id="current-month-year" class="text-2xl font-bold text-slate-800"><span class="washi-banner">Month Year</span></h2>
+        <h2 id="current-month-year" class="text-2xl font-bold text-slate-800">
+          <span class="washi-banner" aria-hidden="true">
+            <svg viewBox="0 0 420 90" class="w-[320px] sm:w-[360px] h-[60px]" role="img" aria-label="Month">
+              <path d="M20 30 C90 5, 160 5, 210 20 C260 5, 330 5, 400 30 L380 80 C310 62, 250 62, 210 70 C170 62, 110 62, 40 80 Z" fill="#ff86b8" stroke="rgba(219,39,119,0.28)" stroke-width="3" />
+              <path d="M35 35 C100 15, 160 15, 210 25 C260 15, 320 15, 385 35" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="6" stroke-linecap="round" />
+              <text id="month-ribbon-text" x="210" y="56" text-anchor="middle" fill="#7a1f44" font-size="26" font-weight="700">Month Year</text>
+            </svg>
+          </span>
+        </h2>
         <div id="sync-status" class="text-xs text-amber-500 font-medium flex items-center gap-2">
           <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i>
           <span>Connecting…</span>
@@ -267,6 +342,7 @@
     <div id="calendar-grid" class="grid grid-cols-7 auto-rows-[150px] sm:auto-rows-[220px] bg-slate-200 gap-px">
       <!-- injected -->
     </div>
+      </div>
     </div>
   </div>
 
@@ -747,8 +823,8 @@
     }
 
     function setMonthTitle(text) {
-      const span = currentMonthYear.querySelector('.washi-banner');
-      if (span) span.textContent = text;
+      const t = document.getElementById('month-ribbon-text');
+      if (t) t.textContent = text;
       else currentMonthYear.textContent = text;
     }
 
@@ -802,7 +878,7 @@
 
       if (isToday) {
         // Today marker: SVG heart (reliable across browsers)
-        num.className = 'relative w-10 h-10 mb-1 flex items-center justify-center';
+        num.className = 'relative w-10 h-10 mb-1 flex items-center justify-center z-10';
         num.innerHTML = `
           <svg viewBox="0 0 24 24" class="absolute inset-0 w-full h-full" aria-hidden="true">
             <path fill="#ec4899" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -865,6 +941,81 @@
         });
 
         if (sortedItems.length > 0) {
+          // Illustrations + stickers (scrapbook overlays)
+          function firstMatch(pred) {
+            return sortedItems.find((it) => pred((it?.text || '').toLowerCase()));
+          }
+
+          function illustrationSvg(kind) {
+            if (kind === 'climbing') {
+              return `
+                <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="mtn" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0" stop-color="#dbeafe"/>
+                      <stop offset="1" stop-color="#bfdbfe"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M10 110 L80 20 L120 70 L150 45 L190 110 Z" fill="url(#mtn)" stroke="#94a3b8" stroke-width="3"/>
+                  <path d="M55 55 L80 20 L98 46" fill="#fff" opacity="0.9"/>
+                  <circle cx="120" cy="60" r="10" fill="#fca5a5"/>
+                  <circle cx="120" cy="54" r="5" fill="#111827"/>
+                  <path d="M112 68 Q120 75 128 68" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M112 75 L100 90" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M128 75 L140 90" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M120 80 L120 98" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                </svg>`;
+            }
+            if (kind === 'revision') {
+              return `
+                <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+                  <rect x="60" y="65" width="90" height="20" rx="10" fill="#fef08a" stroke="#a16207" stroke-width="3"/>
+                  <rect x="55" y="45" width="95" height="20" rx="10" fill="#c7d2fe" stroke="#4338ca" stroke-width="3"/>
+                  <rect x="50" y="25" width="100" height="20" rx="10" fill="#bbf7d0" stroke="#15803d" stroke-width="3"/>
+                  <circle cx="105" cy="35" r="10" fill="#fde68a" stroke="#a16207" stroke-width="3"/>
+                  <circle cx="90" cy="35" r="8" fill="#fff" stroke="#7c3aed" stroke-width="3"/>
+                  <circle cx="120" cy="35" r="8" fill="#fff" stroke="#7c3aed" stroke-width="3"/>
+                  <path d="M98 35 H112" stroke="#7c3aed" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M100 44 Q105 48 110 44" stroke="#7c3aed" stroke-width="3" fill="none" stroke-linecap="round"/>
+                </svg>`;
+            }
+            if (kind === 'swimming') {
+              return `
+                <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+                  <path d="M0 90 Q25 75 50 90 T100 90 T150 90 T200 90 V120 H0 Z" fill="#93c5fd"/>
+                  <path d="M0 98 Q25 83 50 98 T100 98 T150 98 T200 98" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round"/>
+                  <circle cx="110" cy="60" r="22" fill="#fde68a" stroke="#a16207" stroke-width="3"/>
+                  <circle cx="125" cy="54" r="12" fill="#fde68a" stroke="#a16207" stroke-width="3"/>
+                  <circle cx="128" cy="52" r="3" fill="#111827"/>
+                  <path d="M120 60 Q126 64 132 60" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M136 55 L150 60 L136 65 Z" fill="#fb7185"/>
+                </svg>`;
+            }
+            return '';
+          }
+
+          const sAll = sortedItems.map((it) => (it.text || '').toLowerCase()).join('\n');
+          let illKind = null;
+          if (sAll.includes('climbing')) illKind = 'climbing';
+          else if (sAll.includes('revision time')) illKind = 'revision';
+          else if (sAll.includes('swimming')) illKind = 'swimming';
+
+          if (illKind) {
+            const ill = document.createElement('div');
+            ill.className = 'cell-illustration';
+            ill.innerHTML = illustrationSvg(illKind);
+            cell.appendChild(ill);
+          }
+
+          // Stickers: SUPER EXAM
+          const hasExam = !!firstMatch((s) => s.includes('exam') || s.includes('psle') || s.includes('wa'));
+          if (hasExam) {
+            const st = document.createElement('div');
+            st.className = 'sticker sticker-exam';
+            st.textContent = 'SUPER EXAM!';
+            cell.appendChild(st);
+          }
+
           // Render separate chips so different items can keep their own colors
           const chipBase = 'text-[10px] font-bold leading-tight px-2.5 py-1.5 rounded-full border border-transparent shadow-sm';
 

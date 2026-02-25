@@ -563,9 +563,9 @@
       cell.className = `bg-white p-1 sm:p-2 flex flex-col group relative border-none ${overflowClass} ${isFaded ? 'text-slate-300' : 'text-slate-700 cursor-pointer hover:bg-indigo-50/50'}`;
 
       const num = document.createElement('span');
-      // Today marker: star-shaped badge (CSS clip-path)
-      const todayStar = isToday ? 'bg-pink-500 text-white [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]' : '';
-      num.className = `text-base font-extrabold w-10 h-10 flex items-center justify-center mb-1 ${todayStar}`;
+      // Today marker: heart-shaped badge (CSS clip-path)
+      const todayHeart = isToday ? 'bg-pink-500 text-white [clip-path:path("M50 90 C 20 70, 0 45, 20 25 C 35 10, 50 20, 50 35 C 50 20, 65 10, 80 25 C 100 45, 80 70, 50 90 Z")]' : '';
+      num.className = `text-base font-extrabold w-10 h-10 flex items-center justify-center mb-1 ${todayHeart}`;
       num.textContent = day;
       cell.appendChild(num);
 

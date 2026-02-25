@@ -57,6 +57,7 @@
 
     .scrapbook-paper > .paper-inner {
       transform: rotate(1.0deg);
+      padding-top: 60px; /* header safe zone */
     }
 
     /* subtle inner border + paper grain */
@@ -109,7 +110,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transform: translateY(6px); /* sit lower on the paper */
+      transform: translateY(18px); /* sit lower on the paper */
     }
     .washi-banner svg { display: block; }
 
@@ -264,7 +265,7 @@
 
       <!-- Term ribbon removed -->
 
-      <div class="paper-inner overflow-hidden">
+      <div class="paper-inner overflow-visible">
     <!-- Header -->
     <div class="relative flex flex-col md:flex-row md:items-center justify-between px-6 py-6 border-b border-slate-200 bg-white gap-4">
       <!-- Decorative clouds + sun -->

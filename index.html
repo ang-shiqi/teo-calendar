@@ -605,25 +605,7 @@
       }
 
       if (kind === 'nimbus') {
-        return `
-          <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
-            <defs>
-              <linearGradient id="rb" x1="0" x2="1" y1="0" y2="0">
-                <stop offset="0" stop-color="#f9a8d4"/>
-                <stop offset="0.33" stop-color="#93c5fd"/>
-                <stop offset="0.66" stop-color="#a7f3d0"/>
-                <stop offset="1" stop-color="#fde68a"/>
-              </linearGradient>
-            </defs>
-            <path d="M55 90c-20 0-35-12-35-28 0-14 11-26 26-28 6-16 22-27 41-27 20 0 37 12 43 29 16 2 28 14 28 29 0 17-15 30-34 30H55z"
-                  fill="url(#rb)" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
-            <path d="M82 40 l18-18 18 18" fill="#fbbf24" stroke="#a16207" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="92" cy="70" r="4" fill="#334155"/>
-            <circle cx="120" cy="70" r="4" fill="#334155"/>
-            <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
-            <path d="M150 46 l6 6 l-6 6 l-6-6z" fill="#fff" opacity="0.9"/>
-            <path d="M40 46 l6 6 l-6 6 l-6-6z" fill="#fff" opacity="0.9"/>
-          </svg>`;
+        return `<img src="/assets/clouds/nimbus.jpg" alt="Nimbus Cloud" class="w-full h-full object-contain" />`;
       }
 
       if (kind === 'mountain') {

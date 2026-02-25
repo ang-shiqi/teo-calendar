@@ -6,7 +6,7 @@
   <title>Shared Cloud Calendar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Itim&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -14,7 +14,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* Global font */
-    body { font-family: 'Quicksand', ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
+    body { font-family: 'Itim', 'Quicksand', ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
 
     /* --- Kawaii Scrapbook aesthetic --- */
     :root{
@@ -25,37 +25,57 @@
     }
 
     body.scrapbook {
-      /* Corkboard texture (pattern). If you later add a photo asset, replace this url. */
+      /* High-quality corkboard image.
+         Recommended: add /assets/corkboard.jpg to the repo and use that path.
+         For now, this uses a texture URL fallback.
+      */
       background-color: #b7845a;
       background-image:
-        url('https://www.transparenttextures.com/patterns/cork-board.png'),
-        radial-gradient(1200px 700px at 20% 10%, rgba(255,255,255,0.20), transparent 60%),
-        radial-gradient(900px 600px at 80% 30%, rgba(0,0,0,0.12), transparent 55%);
-      background-size: auto, cover, cover;
-      background-attachment: fixed;
+        url('/assets/corkboard.jpg'),
+        url('https://www.transparenttextures.com/patterns/cork-board.png');
+      background-size: cover, auto;
+      background-position: center, top left;
+      background-attachment: fixed, fixed;
     }
 
     .scrapbook-paper {
       position: relative;
       background: var(--paper);
-      border: 1px solid var(--paper-border);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      transform: rotate(-1.1deg);
+      border: 1px solid rgba(15, 23, 42, 0.10);
+      box-shadow: 0 22px 55px rgba(15, 23, 42, 0.22);
+      transform: rotate(-1.0deg);
+
+      /* uneven paper edges */
+      clip-path: polygon(
+        1% 2%, 6% 1%, 14% 2%, 22% 1%, 31% 2%, 40% 1%, 49% 2%, 58% 1%, 68% 2%, 77% 1%, 86% 2%, 94% 1%, 99% 2%,
+        99% 10%, 98% 18%, 99% 27%, 98% 35%, 99% 44%, 98% 53%, 99% 62%, 98% 71%, 99% 80%, 98% 89%, 99% 98%,
+        92% 99%, 84% 98%, 76% 99%, 68% 98%, 60% 99%, 52% 98%, 44% 99%, 36% 98%, 28% 99%, 20% 98%, 12% 99%, 4% 98%,
+        1% 96%, 2% 88%, 1% 79%, 2% 71%, 1% 62%, 2% 54%, 1% 45%, 2% 37%, 1% 28%, 2% 20%, 1% 12%
+      );
     }
 
     .scrapbook-paper > .paper-inner {
-      transform: rotate(1.1deg);
+      transform: rotate(1.0deg);
     }
 
-    /* subtle paper lift */
+    /* subtle inner border + paper grain */
     .scrapbook-paper::before {
       content: "";
       position: absolute;
-      inset: 10px;
-      border-radius: 18px;
+      inset: 12px;
       pointer-events: none;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+      border: 1px solid rgba(15, 23, 42, 0.05);
+      opacity: 0.9;
+    }
+
+    .scrapbook-paper::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: url('https://www.transparenttextures.com/patterns/paper-2.png');
+      opacity: 0.28;
+      mix-blend-mode: multiply;
     }
 
     /* cute tape */
@@ -78,8 +98,10 @@
       background: rgba(255,255,255,0.65);
       transform: rotate(-12deg);
     }
-    .scrapbook-pin.left { left: 22px; background: radial-gradient(circle at 30% 30%, #fff, #ff5fa2 40%, #cc2a6f 85%); }
-    .scrapbook-pin.right { right: 22px; background: radial-gradient(circle at 30% 30%, #fff, #7cdbff 40%, #1f8db8 85%); }
+    .scrapbook-pin.tl { left: 18px; top: -12px; background: radial-gradient(circle at 30% 30%, #fff, #ff5fa2 40%, #cc2a6f 85%); }
+    .scrapbook-pin.tr { right: 18px; top: -12px; background: radial-gradient(circle at 30% 30%, #fff, #7cdbff 40%, #1f8db8 85%); }
+    .scrapbook-pin.bl { left: 18px; bottom: -12px; top: auto; background: radial-gradient(circle at 30% 30%, #fff, #b5ff7c 40%, #4ea31d 85%); }
+    .scrapbook-pin.br { right: 18px; bottom: -12px; top: auto; background: radial-gradient(circle at 30% 30%, #fff, #ffd36e 40%, #d08a00 85%); }
 
     /* Washi tape banner for month header */
     .washi-banner {
@@ -168,10 +190,18 @@
 
 <body class="scrapbook text-slate-800 font-sans antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
   <div class="w-full max-w-5xl scrapbook-paper">
-    <div class="scrapbook-pin left" aria-hidden="true"></div>
-    <div class="scrapbook-pin right" aria-hidden="true"></div>
+    <!-- 4-corner push pins -->
+    <div class="scrapbook-pin tl" aria-hidden="true"></div>
+    <div class="scrapbook-pin tr" aria-hidden="true"></div>
+    <div class="scrapbook-pin bl" aria-hidden="true"></div>
+    <div class="scrapbook-pin br" aria-hidden="true"></div>
 
     <div class="paper-inner overflow-hidden">
+      <!-- Clouds along the very top of the screen -->
+      <div class="pointer-events-none fixed left-6 top-3 z-0 kawaii-cloud" style="transform: scale(0.95); opacity: 0.95"></div>
+      <div class="pointer-events-none fixed left-44 top-1 z-0 kawaii-cloud" style="transform: scale(1.25); opacity: 0.95"></div>
+      <div class="pointer-events-none fixed left-[60%] top-2 z-0 kawaii-cloud" style="transform: scale(1.05); opacity: 0.92"></div>
+      <div class="pointer-events-none fixed right-10 top-4 z-0 kawaii-cloud" style="transform: scale(0.85); opacity: 0.92"></div>
     <!-- Header -->
     <div class="relative flex flex-col md:flex-row md:items-center justify-between px-6 py-6 border-b border-slate-200 bg-white gap-4">
       <!-- Decorative clouds + sun -->
@@ -836,7 +866,7 @@
 
         if (sortedItems.length > 0) {
           // Render separate chips so different items can keep their own colors
-          const chipBase = 'text-[10px] leading-tight px-2 py-1.5 rounded-2xl border border-transparent shadow-sm';
+          const chipBase = 'text-[10px] font-bold leading-tight px-2.5 py-1.5 rounded-full border border-transparent shadow-sm';
 
           function formatTimes12h(line) {
             // Display-only: convert 24h times like 18:30 -> 6.30pm

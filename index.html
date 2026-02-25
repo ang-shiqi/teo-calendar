@@ -205,6 +205,27 @@
       z-index: 2;
     }
 
+    /* Date-specific sticker */
+    .date-sticker {
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      bottom: 6px;
+      height: 72px;
+      pointer-events: none;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .date-sticker img {
+      max-height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 12px rgba(15,23,42,0.18));
+      transform: rotate(-3deg);
+    }
+
     .kawaii-cloud {
       position: absolute;
       top: -18px;
@@ -895,6 +916,17 @@
       }
 
       cell.appendChild(num);
+
+      // Date-specific sticker: Jovan is free!
+      if (dateKey === '2026-09-29') {
+        const st = document.createElement('div');
+        st.className = 'date-sticker';
+        const img = document.createElement('img');
+        img.src = '/assets/stickers/jovan-free.jpg';
+        img.alt = 'Jovan is free!';
+        st.appendChild(img);
+        cell.appendChild(st);
+      }
 
       if (dateKey && events[dateKey]) {
         const ev = events[dateKey];

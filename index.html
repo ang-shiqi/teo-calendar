@@ -36,10 +36,6 @@
           Unlock editing
         </button>
 
-        <button id="import-jovan-exams-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
-          Import Jovan Exams 2026
-        </button>
-
         <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1" role="group" aria-label="Calendar view">
           <button id="view-month" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm">Month</button>
           <button id="view-week" class="px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100">Week</button>
@@ -166,7 +162,6 @@
     const viewWeekBtn = document.getElementById('view-week');
 
     const unlockBtn = document.getElementById('unlock-btn');
-    const importJovanExamsBtn = document.getElementById('import-jovan-exams-btn');
     const saveBtn = document.getElementById('save-event');
     const clearBtn = document.getElementById('delete-event');
 
@@ -188,9 +183,6 @@
       unlockBtn.textContent = canEdit ? 'Editing unlocked' : 'Unlock editing';
       unlockBtn.disabled = canEdit;
       unlockBtn.classList.toggle('opacity-50', canEdit);
-
-      importJovanExamsBtn.disabled = !canEdit;
-      importJovanExamsBtn.classList.toggle('opacity-50', !canEdit);
 
       // save/clear are only meaningful when unlocked
       saveBtn.disabled = !canEdit;
@@ -498,38 +490,6 @@
       eventModal.classList.add('hidden');
     }
 
-
-    const IMPORT_JOVAN_EXAMS_2026 = [{"date": "2026-02-26", "text": "WA1 English", "users": ["jovan"]}, {"date": "2026-02-27", "text": "WA1 Math", "users": ["jovan"]}, {"date": "2026-03-02", "text": "WA1 Chinese", "users": ["jovan"]}, {"date": "2026-03-03", "text": "WA1 Science", "users": ["jovan"]}, {"date": "2026-05-07", "text": "WA2 English", "users": ["jovan"]}, {"date": "2026-05-08", "text": "WA2 Math", "users": ["jovan"]}, {"date": "2026-05-11", "text": "WA2 Chinese", "users": ["jovan"]}, {"date": "2026-05-12", "text": "WA2 Science", "users": ["jovan"]}, {"date": "2026-08-12", "text": "PSLE Oral (0800–1330)", "users": ["jovan"]}, {"date": "2026-08-13", "text": "PSLE Oral (0800–1330)", "users": ["jovan"]}, {"date": "2026-09-15", "text": "PSLE Listening Comprehension (Chinese 0900; English 1115–1150)", "users": ["jovan"]}, {"date": "2026-09-24", "text": "PSLE English Written (P1 0815–0925; P2 1030–1220)", "users": ["jovan"]}, {"date": "2026-09-25", "text": "PSLE Math Written (P1 0815–0925; P2 1030–1150)", "users": ["jovan"]}, {"date": "2026-09-28", "text": "PSLE Chinese Written (P1 0815–0905; P2 1015–1155)", "users": ["jovan"]}, {"date": "2026-09-29", "text": "PSLE Science Written (0815–1000)", "users": ["jovan"]}];
-
-    async function importJovanExams2026() {
-      if (!canEdit) return;
-      const ok = window.confirm('Import Jovan exam dates (WA + PSLE) for 2026?\n\nThis will create/update 15 dates.');
-      if (!ok) return;
-
-      setStatus('loading', 'Importing Jovan exams…');
-
-      let count = 0;
-      for (const item of IMPORT_JOVAN_EXAMS_2026) {
-        const existing = events[item.date] || { text: '', users: [] };
-        const existingLines = (existing.text || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
-        if (!existingLines.includes(item.text)) existingLines.push(item.text);
-
-        const users = Array.from(new Set([...(existing.users || []), ...(item.users || [])]));
-
-        const ref = doc(db, 'artifacts', APP_ID, 'public', 'data', 'events', item.date);
-        await setDoc(ref, {
-          text: existingLines.join('\n'),
-          users,
-          lastUpdated: new Date().toISOString(),
-          updatedBy: user?.uid || null
-        }, { merge: true });
-
-        count++;
-      }
-
-      setStatus('ok', `Imported ${count} Jovan exam dates`);
-    }
-
 // Wire UI
     document.getElementById('prev').onclick = () => {
       if (viewMode === 'month') {
@@ -553,7 +513,6 @@
     };
     document.getElementById('close-modal').onclick = closeModal;
     unlockBtn.onclick = unlockEditing;
-    importJovanExamsBtn.onclick = importJovanExams2026;
 
     function setView(mode) {
       viewMode = mode;

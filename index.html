@@ -89,8 +89,11 @@
       <div class="p-6">
         <input type="hidden" id="event-date-key" />
         <div class="mb-4">
-          <label for="event-text" class="block text-sm font-medium text-slate-700 mb-2">Notes for this day</label>
-          <textarea id="event-text" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-shadow" placeholder="What's happening?"></textarea>
+          <label class="block text-sm font-medium text-slate-700 mb-2">Items for this day</label>
+          <div id="event-items" class="space-y-2"></div>
+          <button id="add-item-row" type="button" class="mt-3 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+            Add row
+          </button>
         </div>
         <div class="flex justify-end gap-3 mt-6">
           <button id="delete-event" class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
@@ -99,10 +102,6 @@
           <button id="save-event" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">
             Save to Cloud
           </button>
-        </div>
-        <div class="mt-4">
-          <div class="text-sm font-medium text-slate-700 mb-2">Who is this for?</div>
-          <div id="user-checkboxes" class="flex flex-wrap gap-2"></div>
         </div>
         <p id="edit-hint" class="mt-3 text-xs text-slate-500"></p>
       </div>
@@ -145,10 +144,11 @@
     // State
     let user = null;
     let currentDate = new Date();
-    let events = {}; // { 'YYYY-MM-DD': { text: string, users: string[] } }
+    let events = {}; // { 'YYYY-MM-DD': { items: Array<{ text: string, users: string[] }>, text: string, users: string[] } }
     let unsubscribeSync = null;
     let canEdit = false;
     let viewMode = "month"; // "month" | "week"
+    let editingItems = [];
     // Mobile: default to Week view (less cramped than Month)
     if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) {
       viewMode = 'week';
@@ -159,12 +159,12 @@
     const currentMonthYear = document.getElementById('current-month-year');
     const syncStatus = document.getElementById('sync-status');
     const eventModal = document.getElementById('event-modal');
-    const eventText = document.getElementById('event-text');
+    const eventItems = document.getElementById('event-items');
+    const addItemRowBtn = document.getElementById('add-item-row');
     const eventDateKey = document.getElementById('event-date-key');
     const editHint = document.getElementById('edit-hint');
 
     const calendarSelect = document.getElementById('calendar-select');
-    const userCheckboxes = document.getElementById('user-checkboxes');
 
     const viewMonthBtn = document.getElementById('view-month');
     const viewWeekBtn = document.getElementById('view-week');
@@ -174,6 +174,52 @@
     const clearBtn = document.getElementById('delete-event');
     const jumpBtn = document.getElementById('jump-btn');
     const jumpMonth = document.getElementById('jump-month');
+    const USER_IDS = new Set(USERS.map((u) => u.id));
+
+    function normalizeUsers(users, fallbackUsers = []) {
+      const src = (Array.isArray(users) && users.length > 0) ? users : fallbackUsers;
+      const out = [];
+      src.forEach((id) => {
+        if (USER_IDS.has(id) && !out.includes(id)) out.push(id);
+      });
+      return out;
+    }
+
+    function normalizeItems(rawItems, fallbackUsers = []) {
+      if (!Array.isArray(rawItems)) return [];
+      return rawItems
+        .map((item) => {
+          if (!item || typeof item !== 'object') return null;
+          const text = typeof item.text === 'string' ? item.text.trim() : '';
+          if (!text) return null;
+          return { text, users: normalizeUsers(item.users, fallbackUsers) };
+        })
+        .filter(Boolean);
+    }
+
+    function getDefaultUsersForNewItem() {
+      if (USER_IDS.has(currentUserFilter)) return [currentUserFilter];
+      return ['shiqi'];
+    }
+
+    function eventFromFirestoreDoc(data) {
+      const docUsers = normalizeUsers(data.users);
+      let items;
+      if (Array.isArray(data.items)) {
+        items = normalizeItems(data.items, docUsers);
+      } else {
+        const legacyText = typeof data.text === 'string' ? data.text : '';
+        items = legacyText
+          .split(/\n+/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((text) => ({ text, users: [...docUsers] }));
+      }
+
+      const text = items.map((item) => item.text).join('\n');
+      const users = [...new Set(items.flatMap((item) => item.users))];
+      return { items, text, users, lastUpdated: data.lastUpdated || '', updatedBy: data.updatedBy || '' };
+    }
 
     function setStatus(kind, text) {
       if (kind === 'loading') {
@@ -197,10 +243,13 @@
       // save/clear are only meaningful when unlocked
       saveBtn.disabled = !canEdit;
       clearBtn.disabled = !canEdit;
+      addItemRowBtn.disabled = !canEdit;
       saveBtn.classList.toggle('opacity-50', !canEdit);
       clearBtn.classList.toggle('opacity-50', !canEdit);
+      addItemRowBtn.classList.toggle('opacity-50', !canEdit);
 
       editHint.textContent = canEdit ? 'Editing is unlocked on this browser.' : 'Read-only. Tap “Unlock editing” and enter passcode to edit.';
+      renderItemRows();
     }
 
     async function initAuth() {
@@ -237,7 +286,7 @@
           const next = {};
           snapshot.forEach((d) => {
             const data = d.data() || {};
-            next[d.id] = { text: data.text || '', users: Array.isArray(data.users) ? data.users : [] };
+            next[d.id] = eventFromFirestoreDoc(data);
           });
           events = next;
           renderCalendar();
@@ -280,13 +329,20 @@
     async function saveEvent() {
       if (!canEdit) return;
       const date = eventDateKey.value;
-      const text = eventText.value.trim();
       if (!user || !date) return;
 
       const ref = doc(db, 'artifacts', APP_ID, 'public', 'data', 'events', date);
-      if (text) {
-        const users = getSelectedUsers();
-        await setDoc(ref, { text, users, lastUpdated: new Date().toISOString(), updatedBy: user.uid }, { merge: true });
+      const items = normalizeItems(editingItems);
+      if (items.length > 0) {
+        const text = items.map((item) => item.text).join('\n');
+        const users = [...new Set(items.flatMap((item) => item.users))];
+        await setDoc(ref, {
+          items,
+          text,
+          users,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: user.uid
+        }, { merge: true });
       } else {
         await deleteDoc(ref);
       }
@@ -429,12 +485,12 @@
 
       if (dateKey && events[dateKey]) {
         const ev = events[dateKey];
-        const visible = currentUserFilter === 'ALL' || (Array.isArray(ev.users) && ev.users.includes(currentUserFilter));
-        if (visible && ev.text) {
-          const preview = document.createElement('div');
-          const t = (ev.text || '');
-          const lines = t.split(/\n+/).map(x => x.trim()).filter(Boolean);
-
+        const allItems = Array.isArray(ev.items) ? ev.items : [];
+        const filteredItems = allItems.filter((item) => {
+          if (currentUserFilter === 'ALL') return true;
+          return Array.isArray(item.users) && item.users.includes(currentUserFilter);
+        });
+        if (filteredItems.length > 0) {
           // Render separate chips so different items can keep their own colors
           const chipBase = 'text-[10px] leading-tight px-1.5 py-1 rounded border-l-2';
 
@@ -468,55 +524,24 @@
             return 'bg-indigo-50 text-slate-600 border-indigo-400';
           }
 
-          function lineVisibleForFilter(line) {
-            if (currentUserFilter === 'ALL') return true;
-            const s2 = (line || '').toLowerCase();
-
-            // Never show climbing-related lines on Shi Qi / Winson filters.
-            if ((currentUserFilter === 'shiqi' || currentUserFilter === 'winson') && s2.includes('climbing')) {
-              return false;
-            }
-
-            // Heuristic per-line filtering for shared-day docs:
-            // Tue time is Asher-only
-            if (s2.includes('climbing class 15:30') || s2.includes('climbing class 15.30')) {
-              return currentUserFilter === 'asher';
-            }
-            // Sat: Jovan vs Asher have different durations
-            if (s2.includes('climbing class 09:00–11:30') || s2.includes('climbing class 09:00-11:30')) {
-              return currentUserFilter === 'jovan';
-            }
-            if (s2.includes('climbing class 09:00–10:30') || s2.includes('climbing class 09:00-10:30')) {
-              return currentUserFilter === 'asher';
-            }
-
-            // Also hide "No climbing class" for anyone besides the climbers.
-            if (s2.includes('no climbing class')) {
-              return currentUserFilter === 'jovan' || currentUserFilter === 'asher';
-            }
-
-            return true;
-          }
-
           const maxChips = (viewMode === 'week') ? 10 : 6;
-          const filteredLines = lines.filter(lineVisibleForFilter);
-          const toShow = filteredLines.slice(0, maxChips);
+          const toShow = filteredItems.slice(0, maxChips);
 
           const stack = document.createElement('div');
           stack.className = 'flex flex-col gap-1';
 
-          toShow.forEach(line => {
+          toShow.forEach((item) => {
             const chip = document.createElement('div');
-            chip.className = `${chipBase} ${chipClassForLine(line)} whitespace-normal break-words`;
+            chip.className = `${chipBase} ${chipClassForLine(item.text)} whitespace-normal break-words`;
             chip.style.wordBreak = 'break-word';
-            chip.textContent = line;
+            chip.textContent = item.text;
             stack.appendChild(chip);
           });
 
-          if (filteredLines.length > maxChips) {
+          if (filteredItems.length > maxChips) {
             const more = document.createElement('div');
             more.className = 'text-[10px] text-slate-400';
-            more.textContent = `+${filteredLines.length - maxChips} more`;
+            more.textContent = `+${filteredItems.length - maxChips} more`;
             stack.appendChild(more);
           }
 
@@ -528,84 +553,93 @@
       calendarGrid.appendChild(cell);
     }
 
-    function renderUserCheckboxes(selected) {
-      const sel = new Set(selected || []);
-      userCheckboxes.innerHTML = '';
+    function renderItemRows() {
+      if (!eventItems) return;
+      eventItems.innerHTML = '';
+      const rows = Array.isArray(editingItems) ? editingItems : [];
 
-      // ALL toggle
-      const allLabel = document.createElement('label');
-      allLabel.className = 'inline-flex items-center gap-2 px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-sm text-slate-700';
+      rows.forEach((item, idx) => {
+        const row = document.createElement('div');
+        row.className = 'rounded-lg border border-slate-200 bg-slate-50 p-2 space-y-2';
 
-      const allCb = document.createElement('input');
-      allCb.type = 'checkbox';
-      allCb.id = 'cb-all-users';
+        const top = document.createElement('div');
+        top.className = 'flex items-center gap-2';
 
-      const allSpan = document.createElement('span');
-      allSpan.textContent = 'All';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Item text';
+        input.value = item.text || '';
+        input.disabled = !canEdit;
+        input.className = 'flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-shadow';
+        input.oninput = (e) => {
+          editingItems[idx].text = e.target.value;
+        };
 
-      allLabel.appendChild(allCb);
-      allLabel.appendChild(allSpan);
-      userCheckboxes.appendChild(allLabel);
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = 'Remove';
+        removeBtn.disabled = !canEdit;
+        removeBtn.className = 'px-2 py-1 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors disabled:opacity-50';
+        removeBtn.onclick = () => {
+          editingItems.splice(idx, 1);
+          renderItemRows();
+        };
 
-      // User checkboxes
-      USERS.forEach(u => {
-        const label = document.createElement('label');
-        label.className = 'inline-flex items-center gap-2 px-2 py-1 rounded-md bg-slate-50 border border-slate-200 text-sm text-slate-700';
+        top.appendChild(input);
+        top.appendChild(removeBtn);
+        row.appendChild(top);
 
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.value = u.id;
-        cb.checked = sel.has(u.id);
+        const checks = document.createElement('div');
+        checks.className = 'flex flex-wrap gap-2';
+        const selected = new Set(normalizeUsers(item.users));
 
-        const span = document.createElement('span');
-        span.textContent = u.label;
+        USERS.forEach((u) => {
+          const label = document.createElement('label');
+          label.className = 'inline-flex items-center gap-2 px-2 py-1 rounded-md bg-white border border-slate-200 text-xs text-slate-700';
 
-        label.appendChild(cb);
-        label.appendChild(span);
-        userCheckboxes.appendChild(label);
-      });
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = selected.has(u.id);
+          cb.disabled = !canEdit;
+          cb.onchange = () => {
+            const next = new Set(normalizeUsers(editingItems[idx].users));
+            if (cb.checked) next.add(u.id);
+            else next.delete(u.id);
+            editingItems[idx].users = [...next];
+          };
 
-      function syncAllFromUsers() {
-        const userCbs = Array.from(userCheckboxes.querySelectorAll('input[type="checkbox"]')).filter(x => x.value);
-        allCb.checked = userCbs.length > 0 && userCbs.every(x => x.checked);
-      }
+          const span = document.createElement('span');
+          span.textContent = u.label;
 
-      allCb.onchange = () => {
-        const on = allCb.checked;
-        userCheckboxes.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-          if (cb.value) cb.checked = on;
+          label.appendChild(cb);
+          label.appendChild(span);
+          checks.appendChild(label);
         });
-      };
 
-      userCheckboxes.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        if (!cb.value) return;
-        cb.onchange = () => syncAllFromUsers();
+        row.appendChild(checks);
+        eventItems.appendChild(row);
       });
-
-      syncAllFromUsers();
-    }
-
-    function getSelectedUsers() {
-      const ids = [];
-      userCheckboxes.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        if (cb.checked) ids.push(cb.value);
-      });
-      return ids;
     }
 
     function openModal(dateKey) {
       eventDateKey.value = dateKey;
-      const ev = events[dateKey] || { text: '', users: [] };
-      eventText.value = ev.text;
-      renderUserCheckboxes(ev.users);
+      const ev = events[dateKey] || { items: [] };
+      if (Array.isArray(ev.items) && ev.items.length > 0) {
+        editingItems = ev.items.map((item) => ({ text: item.text || '', users: normalizeUsers(item.users) }));
+      } else {
+        editingItems = [{ text: '', users: getDefaultUsersForNewItem() }];
+      }
+      renderItemRows();
       document.getElementById('modal-title').innerText = `Events for ${dateKey}`;
       eventModal.classList.remove('hidden');
       updateEditUi();
-      eventText.focus();
+      const firstInput = eventItems.querySelector('input[type="text"]');
+      if (firstInput) firstInput.focus();
     }
 
     function closeModal() {
       eventModal.classList.add('hidden');
+      editingItems = [];
     }
 
 // Wire UI
@@ -664,6 +698,13 @@
 
     viewMonthBtn.onclick = () => setView('month');
     viewWeekBtn.onclick = () => setView('week');
+    addItemRowBtn.onclick = () => {
+      editingItems.push({ text: '', users: getDefaultUsersForNewItem() });
+      renderItemRows();
+      const inputs = eventItems.querySelectorAll('input[type="text"]');
+      const last = inputs[inputs.length - 1];
+      if (last) last.focus();
+    };
 
     saveBtn.onclick = saveEvent;
     clearBtn.onclick = deleteDayEvent;
@@ -681,9 +722,6 @@
       currentUserFilter = calendarSelect.value;
       renderCalendar();
     };
-
-    // Default selected users in modal
-    renderUserCheckboxes(['shiqi']);
 
     initAuth();
     renderCalendar();

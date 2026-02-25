@@ -68,7 +68,7 @@
     </div>
 
     <!-- Calendar Grid -->
-    <div id="calendar-grid" class="grid grid-cols-7 auto-rows-[88px] sm:auto-rows-[120px] bg-slate-200 gap-px">
+    <div id="calendar-grid" class="grid grid-cols-7 auto-rows-[110px] sm:auto-rows-[150px] bg-slate-200 gap-px">
       <!-- injected -->
     </div>
   </div>
@@ -366,7 +366,7 @@
 
     function createDayCell(day, isFaded, dateKey, isToday) {
       const cell = document.createElement('div');
-      cell.className = `bg-white p-2 flex flex-col group relative border-none ${isFaded ? 'text-slate-300' : 'text-slate-700 cursor-pointer hover:bg-indigo-50/50'}`;
+      cell.className = `bg-white p-1 sm:p-2 flex flex-col group relative border-none overflow-auto no-scrollbar ${isFaded ? 'text-slate-300' : 'text-slate-700 cursor-pointer hover:bg-indigo-50/50'}`;
 
       const num = document.createElement('span');
       num.className = `text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full mb-1 ${isToday ? 'bg-indigo-600 text-white' : ''}`;
@@ -402,7 +402,7 @@
             return 'bg-indigo-50 text-slate-600 border-indigo-400';
           }
 
-          const maxChips = 3;
+          const maxChips = 6;
           const toShow = lines.slice(0, maxChips);
 
           const stack = document.createElement('div');
@@ -410,7 +410,8 @@
 
           toShow.forEach(line => {
             const chip = document.createElement('div');
-            chip.className = `${chipBase} ${chipClassForLine(line)} line-clamp-1 overflow-hidden`;
+            chip.className = `${chipBase} ${chipClassForLine(line)} whitespace-normal break-words`;
+            chip.style.wordBreak = 'break-word';
             chip.textContent = line;
             stack.appendChild(chip);
           });

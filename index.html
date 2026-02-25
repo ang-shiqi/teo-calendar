@@ -960,7 +960,13 @@
           }
 
           // Render separate chips so different items can keep their own colors
-          const chipBase = 'text-[10px] font-bold leading-tight px-2.5 py-1.5 rounded-full border border-transparent shadow-sm';
+          const isMobile = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+          const compactMonth = (viewMode === 'month') && isMobile;
+
+          // Month mobile: compact rounded-ends rectangle (not full pill) to reduce horizontal squeeze.
+          const chipBase = compactMonth
+            ? 'text-[9px] font-bold leading-tight px-1.5 py-1 rounded-xl border border-transparent shadow-sm'
+            : 'text-[10px] font-bold leading-tight px-2.5 py-1.5 rounded-full border border-transparent shadow-sm';
 
           function formatTimes12h(line) {
             // Display-only: convert 24h times like 18:30 -> 6.30pm
@@ -1046,7 +1052,8 @@
 
           toShow.forEach((item) => {
             const chip = document.createElement('div');
-            chip.className = `${chipBase} ${chipClassForLine(item.text)} whitespace-normal break-words`;
+            const wrapClass = compactMonth ? 'whitespace-nowrap overflow-hidden text-ellipsis truncate' : 'whitespace-normal break-words';
+            chip.className = `${chipBase} ${chipClassForLine(item.text)} ${wrapClass}`;
             chip.style.wordBreak = 'break-word';
             const em = emojiForLine(item.text);
             const shown = formatTimes12h(item.text);

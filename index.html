@@ -490,7 +490,48 @@
           if (currentUserFilter === 'ALL') return true;
           return Array.isArray(item.users) && item.users.includes(currentUserFilter);
         });
-        if (filteredItems.length > 0) {
+
+        function extractStartMinutes(text) {
+          const s = String(text || '');
+
+          // Find earliest time occurrence (by index) among supported formats.
+          let best = null; // { idx: number, mins: number }
+
+          // 24h: 18:30
+          const r24 = /\b([01]\d|2[0-3]):([0-5]\d)\b/g;
+          for (const m of s.matchAll(r24)) {
+            const mins = Number(m[1]) * 60 + Number(m[2]);
+            const idx = m.index ?? 1e9;
+            if (!best || idx < best.idx) best = { idx, mins };
+          }
+
+          // 12h: 6.30pm / 6:30pm / 6.30 pm
+          const r12 = /\b(\d{1,2})[\.:]([0-5]\d)\s*(am|pm)\b/gi;
+          for (const m of s.matchAll(r12)) {
+            let h = Number(m[1]);
+            const minsPart = Number(m[2]);
+            const ap = String(m[3]).toLowerCase();
+            if (h === 12) h = 0;
+            let h24 = h + (ap === 'pm' ? 12 : 0);
+            const mins = h24 * 60 + minsPart;
+            const idx = m.index ?? 1e9;
+            if (!best || idx < best.idx) best = { idx, mins };
+          }
+
+          return best ? best.mins : null;
+        }
+
+        // Sort by time (display-only). Items without time should be at the top.
+        const sortedItems = [...filteredItems].sort((a, b) => {
+          const ta = extractStartMinutes(a?.text);
+          const tb = extractStartMinutes(b?.text);
+          if (ta == null && tb == null) return 0;
+          if (ta == null) return -1;
+          if (tb == null) return 1;
+          return ta - tb;
+        });
+
+        if (sortedItems.length > 0) {
           // Render separate chips so different items can keep their own colors
           const chipBase = 'text-[10px] leading-tight px-1.5 py-1 rounded border-l-2';
 
@@ -547,7 +588,7 @@
           }
 
           const maxChips = (viewMode === 'week') ? 10 : 6;
-          const toShow = filteredItems.slice(0, maxChips);
+          const toShow = sortedItems.slice(0, maxChips);
 
           const stack = document.createElement('div');
           stack.className = 'flex flex-col gap-1';
@@ -560,10 +601,10 @@
             stack.appendChild(chip);
           });
 
-          if (filteredItems.length > maxChips) {
+          if (sortedItems.length > maxChips) {
             const more = document.createElement('div');
             more.className = 'text-[10px] text-slate-400';
-            more.textContent = `+${filteredItems.length - maxChips} more`;
+            more.textContent = `+${sortedItems.length - maxChips} more`;
             stack.appendChild(more);
           }
 

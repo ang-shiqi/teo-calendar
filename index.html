@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,6 +34,18 @@
         </select>
         <button id="unlock-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
           Unlock editing
+        </button>
+
+        <button id="import-generic-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Import
+        </button>
+
+        <button id="import-jovan-exams-btn" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Import Jovan Exams 2026
+        </button>
+
+        <button id="import-jovan-exams" class="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Import Jovan Exams 2026
         </button>
 
         <div class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1" role="group" aria-label="Calendar view">
@@ -106,6 +117,35 @@
     </div>
   </div>
 
+  
+  <!-- Import Modal -->
+  <div id="import-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden transform transition-all">
+      <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-slate-800">Import events</h3>
+        <button id="close-import" class="text-slate-400 hover:text-slate-600 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <p class="text-sm text-slate-600 mb-3">Paste one event per line:</p>
+        <pre class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3 whitespace-pre-wrap">YYYY-MM-DD | text | users
+Example:
+2026-02-26 | WA1 English | jovan
+2026-09-24 | PSLE English (P1 0815-0925; P2 1030-1220) | jovan
+2026-03-21 | Public Holiday: Hari Raya Puasa | all
+</pre>
+        <textarea id="import-text" rows="10" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-800 focus:ring-2 focus:ring-indigo-500 transition-shadow" placeholder="Paste here..."></textarea>
+
+        <div class="flex justify-end gap-3 mt-4">
+          <button id="import-cancel" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
+          <button id="import-run" class="px-6 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors">Import to Cloud</button>
+        </div>
+        <p id="import-status" class="mt-3 text-xs text-slate-500"></p>
+      </div>
+    </div>
+  </div>
+
   <!-- Load firebase config from config.js so you only fill it once -->
   <script src="./config.js"></script>
 
@@ -163,6 +203,15 @@
     const viewWeekBtn = document.getElementById('view-week');
 
     const unlockBtn = document.getElementById('unlock-btn');
+    const importGenericBtn = document.getElementById('import-generic-btn');
+    const importJovanExamsBtn = document.getElementById('import-jovan-exams-btn');
+    const importModal = document.getElementById('import-modal');
+    const importClose = document.getElementById('close-import');
+    const importCancel = document.getElementById('import-cancel');
+    const importRun = document.getElementById('import-run');
+    const importText = document.getElementById('import-text');
+    const importStatus = document.getElementById('import-status');
+    const importJovanBtn = document.getElementById('import-jovan-exams');
     const saveBtn = document.getElementById('save-event');
     const clearBtn = document.getElementById('delete-event');
 
@@ -185,6 +234,12 @@
       unlockBtn.disabled = canEdit;
       unlockBtn.classList.toggle('opacity-50', canEdit);
 
+      importGenericBtn.disabled = !canEdit;
+      importGenericBtn.classList.toggle('opacity-50', !canEdit);
+
+      importJovanExamsBtn.disabled = !canEdit;
+      importJovanExamsBtn.classList.toggle('opacity-50', !canEdit);
+
       // save/clear are only meaningful when unlocked
       saveBtn.disabled = !canEdit;
       clearBtn.disabled = !canEdit;
@@ -192,6 +247,9 @@
       clearBtn.classList.toggle('opacity-50', !canEdit);
 
       editHint.textContent = canEdit ? 'Editing is unlocked on this browser.' : 'Read-only. Tap “Unlock editing” and enter passcode to edit.';
+
+      importJovanBtn.disabled = !canEdit;
+      importJovanBtn.classList.toggle('opacity-50', !canEdit);
     }
 
     async function initAuth() {
@@ -491,6 +549,157 @@
       eventModal.classList.add('hidden');
     }
 
+
+    const IMPORT_JOVAN_EXAMS_2026 = [{"date": "2026-02-26", "text": "WA1 English", "users": ["jovan"]}, {"date": "2026-02-27", "text": "WA1 Math", "users": ["jovan"]}, {"date": "2026-03-02", "text": "WA1 Chinese", "users": ["jovan"]}, {"date": "2026-03-03", "text": "WA1 Science", "users": ["jovan"]}, {"date": "2026-05-07", "text": "WA2 English", "users": ["jovan"]}, {"date": "2026-05-08", "text": "WA2 Math", "users": ["jovan"]}, {"date": "2026-05-11", "text": "WA2 Chinese", "users": ["jovan"]}, {"date": "2026-05-12", "text": "WA2 Science", "users": ["jovan"]}, {"date": "2026-08-12", "text": "PSLE Oral (0800–1330)", "users": ["jovan"]}, {"date": "2026-08-13", "text": "PSLE Oral (0800–1330)", "users": ["jovan"]}, {"date": "2026-09-15", "text": "PSLE Listening Comprehension (Chinese 0900; English 1115–1150)", "users": ["jovan"]}, {"date": "2026-09-24", "text": "PSLE English Written (P1 0815–0925; P2 1030–1220)", "users": ["jovan"]}, {"date": "2026-09-25", "text": "PSLE Math Written (P1 0815–0925; P2 1030–1150)", "users": ["jovan"]}, {"date": "2026-09-28", "text": "PSLE Chinese Written (P1 0815–0905; P2 1015–1155)", "users": ["jovan"]}, {"date": "2026-09-29", "text": "PSLE Science Written (0815–1000)", "users": ["jovan"]}];
+
+    function normalizeLines(s) {
+      return (s || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
+    }
+
+    async function importJovanExams2026() {
+      if (!canEdit) return;
+      const ok = window.confirm('Import Jovan exam dates (WA + PSLE) for 2026?
+
+This will create/update 15 dates.');
+      if (!ok) return;
+
+      setStatus('loading', 'Importing Jovan exams…');
+
+      let count = 0;
+      for (const item of IMPORT_JOVAN_EXAMS_2026) {
+        const dateKey = item.date;
+        const existing = events[dateKey] || { text: '', users: [] };
+
+        const lines = normalizeLines(existing.text);
+        if (!lines.includes(item.text)) lines.push(item.text);
+
+        const users = Array.from(new Set([...(existing.users || []), ...(item.users || [])]));
+
+        const ref = doc(db, 'artifacts', APP_ID, 'public', 'data', 'events', dateKey);
+        await setDoc(ref, {
+          text: lines.join('\n'),
+          users,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: user?.uid || null
+        }, { merge: true });
+
+        count++;
+      }
+
+      setStatus('ok', `Imported ${count} Jovan exam dates`);
+    }
+
+
+    function openImport() {
+      if (!canEdit) return;
+      importStatus.textContent = '';
+      importModal.classList.remove('hidden');
+      importText.focus();
+      lucide.createIcons();
+    }
+
+    function closeImport() {
+      importModal.classList.add('hidden');
+    }
+
+    function parseUsers(raw) {
+      const s = (raw || '').trim().toLowerCase();
+      if (!s || s === 'all') return ['shiqi', 'jovan', 'asher', 'winson'];
+      return s.split(',').map(x => x.trim()).filter(Boolean);
+    }
+
+    function parseImportLines(text) {
+      const lines = (text || '').split(/
++/).map(x => x.trim()).filter(Boolean);
+      const out = [];
+      for (const ln of lines) {
+        if (ln.startsWith('#')) continue;
+        const parts = ln.split('|').map(x => x.trim());
+        if (parts.length < 2) continue;
+        const dateKey = parts[0];
+        const evtText = parts[1];
+        const users = parseUsers(parts[2] || '');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) continue;
+        if (!evtText) continue;
+        out.push({ date: dateKey, text: evtText, users });
+      }
+      return out;
+    }
+
+    async function runGenericImport() {
+      if (!canEdit) return;
+      const items = parseImportLines(importText.value);
+      if (!items.length) {
+        importStatus.textContent = 'Nothing to import (check formatting).';
+        return;
+      }
+
+      const ok = window.confirm(`Import ${items.length} events into cloud?`);
+      if (!ok) return;
+
+      setStatus('loading', 'Importing…');
+      importStatus.textContent = `Importing ${items.length}…`;
+
+      let count = 0;
+      for (const item of items) {
+        const existing = events[item.date] || { text: '', users: [] };
+        const existingLines = (existing.text || '').split(/
++/).map(x => x.trim()).filter(Boolean);
+        if (!existingLines.includes(item.text)) existingLines.push(item.text);
+
+        const users = Array.from(new Set([...(existing.users || []), ...(item.users || [])]));
+
+        const ref = doc(db, 'artifacts', APP_ID, 'public', 'data', 'events', item.date);
+        await setDoc(ref, {
+          text: existingLines.join('
+'),
+          users,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: user?.uid || null
+        }, { merge: true });
+
+        count++;
+      }
+
+      importStatus.textContent = `Imported ${count} events.`;
+      setStatus('ok', canEdit ? 'Cloud synced (editable)' : 'Cloud synced (read-only)');
+      closeImport();
+    }
+
+
+    const IMPORT_JOVAN_EXAMS_2026 = [{"date": "2026-02-26", "text": "WA1 English", "users": ["jovan"]}, {"date": "2026-02-27", "text": "WA1 Math", "users": ["jovan"]}, {"date": "2026-03-02", "text": "WA1 Chinese", "users": ["jovan"]}, {"date": "2026-03-03", "text": "WA1 Science", "users": ["jovan"]}, {"date": "2026-05-07", "text": "WA2 English", "users": ["jovan"]}, {"date": "2026-05-08", "text": "WA2 Math", "users": ["jovan"]}, {"date": "2026-05-11", "text": "WA2 Chinese", "users": ["jovan"]}, {"date": "2026-05-12", "text": "WA2 Science", "users": ["jovan"]}, {"date": "2026-08-12", "text": "PSLE Oral (0800–1330)", "users": ["jovan"]}, {"date": "2026-08-13", "text": "PSLE Oral (0800–1330)", "users": ["jovan"]}, {"date": "2026-09-15", "text": "PSLE Listening Comprehension (Chinese 0900; English 1115–1150)", "users": ["jovan"]}, {"date": "2026-09-24", "text": "PSLE English Written (P1 0815–0925; P2 1030–1220)", "users": ["jovan"]}, {"date": "2026-09-25", "text": "PSLE Math Written (P1 0815–0925; P2 1030–1150)", "users": ["jovan"]}, {"date": "2026-09-28", "text": "PSLE Chinese Written (P1 0815–0905; P2 1015–1155)", "users": ["jovan"]}, {"date": "2026-09-29", "text": "PSLE Science Written (0815–1000)", "users": ["jovan"]}];
+
+    async function importJovanExams2026() {
+      if (!canEdit) return;
+      const ok = window.confirm('Import Jovan exam dates (WA + PSLE) for 2026?
+
+This will create/update 15 dates.');
+      if (!ok) return;
+
+      setStatus('loading', 'Importing Jovan exams…');
+
+      let count = 0;
+      for (const item of IMPORT_JOVAN_EXAMS_2026) {
+        const existing = events[item.date] || { text: '', users: [] };
+        const existingLines = (existing.text || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
+        if (!existingLines.includes(item.text)) existingLines.push(item.text);
+
+        const users = Array.from(new Set([...(existing.users || []), ...(item.users || [])]));
+
+        const ref = doc(db, 'artifacts', APP_ID, 'public', 'data', 'events', item.date);
+        await setDoc(ref, {
+          text: existingLines.join('\n'),
+          users,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: user?.uid || null
+        }, { merge: true });
+
+        count++;
+      }
+
+      setStatus('ok', `Imported ${count} Jovan exam dates`);
+    }
+
 // Wire UI
     document.getElementById('prev').onclick = () => {
       if (viewMode === 'month') {
@@ -513,7 +722,13 @@
       renderCalendar();
     };
     document.getElementById('close-modal').onclick = closeModal;
+    importClose.onclick = closeImport;
+    importCancel.onclick = closeImport;
+    importRun.onclick = runGenericImport;
     unlockBtn.onclick = unlockEditing;
+    importGenericBtn.onclick = openImport;
+    importJovanExamsBtn.onclick = importJovanExams2026;
+    importJovanBtn.onclick = importJovanExams2026;
 
     function setView(mode) {
       viewMode = mode;

@@ -446,6 +446,15 @@
           </div>
           <div class="absolute -inset-2 -z-10 rounded-[40px] bg-gradient-to-r from-pink-200/40 via-sky-200/40 to-teal-200/40 blur-lg"></div>
         </div>
+
+        <!-- Celebration -->
+        <div id="stretch-celebrate" class="hidden fixed inset-0 z-[130] pointer-events-none flex items-center justify-center">
+          <div class="rounded-[36px] bg-white shadow-2xl border border-slate-200 px-8 py-6 text-center">
+            <div class="text-4xl">☁️</div>
+            <div class="mt-2 text-2xl font-extrabold text-slate-800">Great Job, Jovan!</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -512,6 +521,7 @@
 
     // Persist per device/browser
     const UI_STATE_KEY = `teo-calendar:${APP_ID}:uiState`;
+    const STRETCH_DONE_KEY = `teo-calendar:${APP_ID}:stretchDone:jovan`;
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -851,10 +861,52 @@
       closeModal();
     }
 
+    function todayKeySGT() {
+      // YYYY-MM-DD in Asia/Singapore
+      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' });
+      return fmt.format(new Date());
+    }
+
+    function isStretchDoneToday() {
+      try {
+        return localStorage.getItem(STRETCH_DONE_KEY) === todayKeySGT();
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function setStretchDoneToday(done) {
+      try {
+        if (done) localStorage.setItem(STRETCH_DONE_KEY, todayKeySGT());
+        else localStorage.removeItem(STRETCH_DONE_KEY);
+      } catch (_) {}
+    }
+
     function updateJovanFooter() {
       const el = document.getElementById('jovan-footer');
       if (!el) return;
       el.classList.toggle('hidden', currentUserFilter !== 'jovan');
+
+      // Update footer button state
+      const btn = document.getElementById('start-stretches');
+      const done = isStretchDoneToday();
+      if (btn) {
+        if (done) {
+          btn.textContent = '✅ Stretches Done for Today!';
+          btn.disabled = true;
+          btn.classList.add('opacity-70');
+        } else {
+          btn.textContent = '☁️ Start Daily Stretches';
+          btn.disabled = false;
+          btn.classList.remove('opacity-70');
+        }
+      }
+
+      // Update dropdown indicator next to Jovan
+      const opt = calendarSelect?.querySelector('option[value="jovan"]');
+      if (opt) {
+        opt.textContent = done ? 'Jovan 🌈✨' : 'Jovan ☁️';
+      }
     }
 
     // Stretching timer (vanilla JS)
@@ -1010,7 +1062,20 @@
         // finished routine
         stretchAwaitNext = false;
         stretchPaused = true;
+        stretchStarted = false;
+        setStretchDoneToday(true);
+        updateJovanFooter();
+
+        // Celebration animation
+        const cel = document.getElementById('stretch-celebrate');
+        if (cel) {
+          cel.classList.remove('hidden');
+          setTimeout(() => cel.classList.add('hidden'), 1200);
+        }
+
         renderStretchUI();
+        // Auto close after celebration
+        setTimeout(() => closeStretch(), 1400);
       }
     }
 
@@ -1207,6 +1272,14 @@
         img.alt = 'Jovan is free!';
         st.appendChild(img);
         cell.appendChild(st);
+      }
+
+      // Today badge when stretching done
+      if (isToday && isStretchDoneToday()) {
+        const b = document.createElement('div');
+        b.className = 'absolute right-1 top-1 z-10 text-[10px] font-extrabold bg-pink-100 text-pink-900 border border-pink-200 rounded-full px-2 py-1';
+        b.textContent = '💗 Stretches Done!';
+        cell.appendChild(b);
       }
 
       if (dateKey && events[dateKey]) {

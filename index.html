@@ -382,9 +382,11 @@
       <div class="rounded-2xl bg-[#eef6ff] border border-[#cfe3ff] shadow-sm p-4">
         <div class="flex items-center justify-between gap-3 mb-2">
           <div class="text-sm sm:text-base font-bold text-slate-800">☁️ Jovan's Stretching Routine ☁️</div>
-          <div class="flex items-center gap-2">
-            <div id="jovan-cloud" class="w-14 h-8"></div>
+          <div class="text-right">
             <div id="jovan-streak" class="text-xs sm:text-sm font-extrabold text-slate-700">🔥 0 Day Streak</div>
+            <div id="jovan-evolution" class="mt-1 flex justify-end">
+              <div id="jovan-cloud" class="w-20 h-12"></div>
+            </div>
           </div>
         </div>
         <div class="text-xs sm:text-sm text-slate-700 leading-relaxed space-y-2">
@@ -1211,14 +1213,10 @@
         }
       }
 
-      // Update dropdown indicator next to Jovan (evolution icon)
+      // Update dropdown indicator next to Jovan (no evolution next to name)
       const opt = calendarSelect?.querySelector('option[value="jovan"]');
       if (opt) {
-        const { count } = getStretchStreak();
-        const ms = currentMilestone(count);
-        // <option> can't render SVG; keep a simple text indicator here.
-        const tag = ms ? `(${ms.days})` : (done ? '✓' : '');
-        opt.textContent = `Jovan ${tag}`;
+        opt.textContent = 'Jovan';
       }
     }
 

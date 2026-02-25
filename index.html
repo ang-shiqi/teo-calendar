@@ -393,9 +393,58 @@
             <div class="font-bold">Golden Rules</div>
             <div>✨ Breathe deep. ✨ No sharp pain. ✨ Consistency is key!</div>
           </div>
-</div>
+
+          <button id="start-stretches" type="button" class="mt-3 w-full px-4 py-3 rounded-2xl bg-gradient-to-r from-pink-200 via-sky-200 to-teal-200 text-slate-900 font-extrabold shadow-md hover:shadow-lg active:scale-[0.99] transition">
+            ☁️ Start Daily Stretches
+          </button>
+        </div>
       </div>
     </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stretching Timer Overlay -->
+  <div id="stretch-overlay" class="hidden fixed inset-0 z-[120]">
+    <div id="stretch-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="w-full max-w-md sm:max-w-lg">
+        <div class="h-3 w-full rounded-full bg-white/60 overflow-hidden shadow-sm border border-white/60">
+          <div id="stretch-progress" class="h-full rounded-full bg-gradient-to-r from-pink-300 via-sky-300 to-teal-200 transition-all" style="width:0%"></div>
+        </div>
+
+        <div class="mt-4 relative">
+          <div class="rounded-[32px] bg-white shadow-xl border border-slate-200 p-5 sm:p-6">
+            <!-- cloud bubbles -->
+            <div class="absolute -top-4 left-6 w-16 h-16 bg-white rounded-full border border-slate-200 shadow-md"></div>
+            <div class="absolute -top-6 left-20 w-20 h-20 bg-white rounded-full border border-slate-200 shadow-md"></div>
+            <div class="absolute -top-4 right-10 w-14 h-14 bg-white rounded-full border border-slate-200 shadow-md"></div>
+
+            <div class="relative">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-xs font-bold text-slate-500">☁️ Daily Stretches</div>
+                  <div id="stretch-title" class="mt-1 text-xl sm:text-2xl font-extrabold text-slate-800">—</div>
+                  <div id="stretch-note" class="mt-1 text-sm font-semibold text-slate-600"></div>
+                </div>
+                <button id="stretch-close" class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">Close</button>
+              </div>
+
+              <div class="mt-6 flex items-center justify-center">
+                <div id="stretch-time" class="text-5xl sm:text-6xl font-extrabold tracking-tight text-slate-800">0:00</div>
+              </div>
+
+              <div class="mt-6 grid grid-cols-3 gap-3">
+                <button id="stretch-back" class="px-3 py-3 rounded-2xl bg-sky-100 hover:bg-sky-200 text-slate-800 font-extrabold disabled:opacity-50">Back</button>
+                <button id="stretch-pause" class="px-3 py-3 rounded-2xl bg-pink-200 hover:bg-pink-300 text-slate-900 font-extrabold">Pause</button>
+                <button id="stretch-next" class="px-3 py-3 rounded-2xl bg-teal-100 hover:bg-teal-200 text-slate-800 font-extrabold disabled:opacity-50">Next</button>
+              </div>
+
+              <div class="mt-5 flex justify-center text-slate-400 font-extrabold">^‿^</div>
+            </div>
+          </div>
+          <div class="absolute -inset-2 -z-10 rounded-[40px] bg-gradient-to-r from-pink-200/40 via-sky-200/40 to-teal-200/40 blur-lg"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -806,6 +855,131 @@
       if (!el) return;
       el.classList.toggle('hidden', currentUserFilter !== 'jovan');
     }
+
+    // Stretching timer (vanilla JS)
+    const STRETCH_STEPS = (() => {
+      const steps = [];
+      steps.push({ label: 'Calf Stretch (L)', seconds: 60, note: '30s straight, 30s bent' });
+      steps.push({ label: 'Calf Stretch (R)', seconds: 60, note: '30s straight, 30s bent' });
+      for (let r = 1; r <= 3; r++) {
+        steps.push({ label: 'Hamstring Hinge (L)', seconds: 30, note: `Round ${r}/3` });
+        steps.push({ label: 'Hamstring Hinge (R)', seconds: 30, note: `Round ${r}/3` });
+      }
+      steps.push({ label: 'Frog Stretch', seconds: 120, note: '2 mins' });
+      steps.push({ label: 'Figure-4 Glute (L)', seconds: 45 });
+      steps.push({ label: 'Figure-4 Glute (R)', seconds: 45 });
+      steps.push({ label: 'Couch Stretch (L)', seconds: 120, note: '2 mins' });
+      steps.push({ label: 'Couch Stretch (R)', seconds: 120, note: '2 mins' });
+      steps.push({ label: 'Bonus - Doorway Chest', seconds: 60, note: '1 min' });
+      return steps;
+    })();
+
+    function fmtMMSS(total) {
+      const m = Math.floor(total / 60);
+      const s = total % 60;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    let stretchOpen = false;
+    let stretchPaused = false;
+    let stretchIdx = 0;
+    let stretchRemaining = 0;
+    let stretchTimer = null;
+
+    function stretchTotalSeconds() {
+      return STRETCH_STEPS.reduce((a, s) => a + (s.seconds || 0), 0);
+    }
+
+    function stretchCompletedSeconds() {
+      const before = STRETCH_STEPS.slice(0, stretchIdx).reduce((a, s) => a + (s.seconds || 0), 0);
+      const cur = STRETCH_STEPS[stretchIdx];
+      return before + ((cur?.seconds || 0) - stretchRemaining);
+    }
+
+    function renderStretchUI() {
+      const title = document.getElementById('stretch-title');
+      const note = document.getElementById('stretch-note');
+      const time = document.getElementById('stretch-time');
+      const prog = document.getElementById('stretch-progress');
+      const btnBack = document.getElementById('stretch-back');
+      const btnNext = document.getElementById('stretch-next');
+      const btnPause = document.getElementById('stretch-pause');
+
+      const step = STRETCH_STEPS[stretchIdx];
+      if (title) title.textContent = step?.label || 'Done!';
+      if (note) note.textContent = step?.note || '';
+      if (time) time.textContent = fmtMMSS(Math.max(0, stretchRemaining));
+
+      const total = stretchTotalSeconds();
+      const pct = total ? (stretchCompletedSeconds() / total) * 100 : 0;
+      if (prog) prog.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+
+      if (btnBack) btnBack.disabled = stretchIdx <= 0;
+      if (btnNext) btnNext.disabled = stretchIdx >= STRETCH_STEPS.length - 1;
+      if (btnPause) btnPause.textContent = stretchPaused ? 'Resume' : 'Pause';
+    }
+
+    function openStretch() {
+      if (currentUserFilter !== 'jovan') return;
+      const overlay = document.getElementById('stretch-overlay');
+      if (!overlay) return;
+      overlay.classList.remove('hidden');
+      stretchOpen = true;
+      stretchPaused = false;
+      stretchIdx = 0;
+      stretchRemaining = STRETCH_STEPS[0]?.seconds || 0;
+      renderStretchUI();
+      if (stretchTimer) clearInterval(stretchTimer);
+      stretchTimer = setInterval(() => {
+        if (!stretchOpen || stretchPaused) return;
+        if (stretchRemaining > 1) {
+          stretchRemaining -= 1;
+          renderStretchUI();
+          return;
+        }
+        // advance
+        if (stretchIdx < STRETCH_STEPS.length - 1) {
+          stretchIdx += 1;
+          stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
+          renderStretchUI();
+        } else {
+          stretchPaused = true;
+          renderStretchUI();
+        }
+      }, 1000);
+    }
+
+    function closeStretch() {
+      const overlay = document.getElementById('stretch-overlay');
+      if (overlay) overlay.classList.add('hidden');
+      stretchOpen = false;
+      if (stretchTimer) {
+        clearInterval(stretchTimer);
+        stretchTimer = null;
+      }
+    }
+
+    function stretchNext() {
+      if (stretchIdx < STRETCH_STEPS.length - 1) {
+        stretchIdx += 1;
+        stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
+        renderStretchUI();
+      }
+    }
+
+    function stretchBack() {
+      if (stretchIdx > 0) {
+        stretchIdx -= 1;
+        stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
+        renderStretchUI();
+      }
+    }
+
+    function stretchTogglePause() {
+      stretchPaused = !stretchPaused;
+      renderStretchUI();
+    }
+
 
     function renderCalendar() {
       calendarGrid.innerHTML = '';
@@ -1278,6 +1452,20 @@
     }
     document.getElementById('close-modal').onclick = closeModal;
     unlockBtn.onclick = unlockEditing;
+
+    // Stretching timer wiring
+    const startStretchesBtn = document.getElementById('start-stretches');
+    if (startStretchesBtn) startStretchesBtn.onclick = openStretch;
+    const stretchCloseBtn = document.getElementById('stretch-close');
+    if (stretchCloseBtn) stretchCloseBtn.onclick = closeStretch;
+    const stretchBackdrop = document.getElementById('stretch-backdrop');
+    if (stretchBackdrop) stretchBackdrop.onclick = closeStretch;
+    const stretchBackBtn = document.getElementById('stretch-back');
+    if (stretchBackBtn) stretchBackBtn.onclick = stretchBack;
+    const stretchNextBtn = document.getElementById('stretch-next');
+    if (stretchNextBtn) stretchNextBtn.onclick = stretchNext;
+    const stretchPauseBtn = document.getElementById('stretch-pause');
+    if (stretchPauseBtn) stretchPauseBtn.onclick = stretchTogglePause;
 
     function setView(mode) {
       viewMode = mode;

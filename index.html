@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Itim&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -204,6 +205,8 @@
       position: relative;
       z-index: 2;
     }
+
+    @keyframes pop { from { transform: scale(0.8); } to { transform: scale(1); } }
 
     /* Date-specific sticker */
     .date-sticker {
@@ -447,11 +450,25 @@
           <div class="absolute -inset-2 -z-10 rounded-[40px] bg-gradient-to-r from-pink-200/40 via-sky-200/40 to-teal-200/40 blur-lg"></div>
         </div>
 
-        <!-- Celebration -->
-        <div id="stretch-celebrate" class="hidden fixed inset-0 z-[130] pointer-events-none flex items-center justify-center">
-          <div class="rounded-[36px] bg-white shadow-2xl border border-slate-200 px-8 py-6 text-center">
-            <div class="text-4xl">☁️</div>
-            <div class="mt-2 text-2xl font-extrabold text-slate-800">Great Job, Jovan!</div>
+        <!-- Daily completion banner -->
+        <div id="stretch-success" class="hidden fixed inset-0 z-[140]">
+          <div class="absolute inset-0 bg-gradient-to-br from-pink-200/50 via-sky-200/50 to-teal-200/50 backdrop-blur-sm"></div>
+          <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div id="stretch-success-card" class="w-full max-w-md rounded-[36px] bg-white shadow-2xl border border-slate-200 px-6 py-6 text-center animate-[pop_220ms_ease-out]">
+              <div class="mx-auto w-24 h-16">
+                <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+                  <path d="M55 90c-20 0-35-12-35-28 0-14 11-26 26-28 6-16 22-27 41-27 20 0 37 12 43 29 16 2 28 14 28 29 0 17-15 30-34 30H55z" fill="#e0f2fe" stroke="#93c5fd" stroke-width="6"/>
+                  <circle cx="90" cy="70" r="4" fill="#334155"/>
+                  <circle cx="120" cy="70" r="4" fill="#334155"/>
+                  <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="mt-2 text-2xl font-extrabold text-slate-800">Daily Routine Complete! ✨</div>
+              <div id="stretch-streak" class="mt-2 text-xl font-extrabold text-slate-900">🔥 0 Day Streak!</div>
+              <button id="stretch-success-close" class="mt-5 w-full px-4 py-4 rounded-2xl bg-gradient-to-r from-pink-200 via-sky-200 to-teal-200 text-slate-900 font-extrabold shadow-md hover:shadow-lg active:scale-[0.99] transition">
+                Yay!
+              </button>
+            </div>
           </div>
         </div>
 
@@ -522,6 +539,7 @@
     // Persist per device/browser
     const UI_STATE_KEY = `teo-calendar:${APP_ID}:uiState`;
     const STRETCH_DONE_KEY = `teo-calendar:${APP_ID}:stretchDone:jovan`;
+    const STRETCH_STREAK_KEY = `teo-calendar:${APP_ID}:stretchStreak:jovan`;
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -875,10 +893,50 @@
       }
     }
 
+    function ydayKeySGT() {
+      const now = new Date();
+      // Create a date-like string by subtracting 24h; good enough for daily marker usage.
+      const y = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' });
+      return fmt.format(y);
+    }
+
+    function getStretchStreak() {
+      try {
+        const raw = localStorage.getItem(STRETCH_STREAK_KEY);
+        if (!raw) return { count: 0, lastDone: null };
+        const s = JSON.parse(raw);
+        return { count: Number(s?.count) || 0, lastDone: (typeof s?.lastDone === 'string' ? s.lastDone : null) };
+      } catch (_) {
+        return { count: 0, lastDone: null };
+      }
+    }
+
+    function setStretchStreak(count, lastDone) {
+      try {
+        localStorage.setItem(STRETCH_STREAK_KEY, JSON.stringify({ count, lastDone }));
+      } catch (_) {}
+    }
+
     function setStretchDoneToday(done) {
       try {
-        if (done) localStorage.setItem(STRETCH_DONE_KEY, todayKeySGT());
-        else localStorage.removeItem(STRETCH_DONE_KEY);
+        if (done) {
+          const today = todayKeySGT();
+          const { count, lastDone } = getStretchStreak();
+          // compute streak
+          let nextCount = count;
+          if (lastDone === today) {
+            // no change
+          } else if (lastDone === ydayKeySGT()) {
+            nextCount = Math.max(1, count) + 1;
+          } else {
+            nextCount = 1;
+          }
+          localStorage.setItem(STRETCH_DONE_KEY, today);
+          setStretchStreak(nextCount, today);
+        } else {
+          localStorage.removeItem(STRETCH_DONE_KEY);
+        }
       } catch (_) {}
     }
 
@@ -1029,12 +1087,24 @@
           return;
         }
 
-        // Step finished: chime + wait for manual Next
+        // Step finished: chime + wait for manual Next (except final step)
         stretchRemaining = 0;
         playChime();
-        stretchAwaitNext = true;
-        stretchPaused = true;
-        renderStretchUI();
+
+        const isFinal = stretchIdx >= STRETCH_STEPS.length - 1;
+        if (isFinal) {
+          // Mark done + show success banner
+          stretchStarted = false;
+          stretchPaused = true;
+          stretchAwaitNext = false;
+          setStretchDoneToday(true);
+          updateJovanFooter();
+          showStretchSuccessBanner();
+        } else {
+          stretchAwaitNext = true;
+          stretchPaused = true;
+          renderStretchUI();
+        }
       }, 1000);
     }
 
@@ -1059,24 +1129,6 @@
         stretchPaused = false;
         stretchStarted = true;
         renderStretchUI();
-      } else {
-        // finished routine
-        stretchAwaitNext = false;
-        stretchPaused = true;
-        stretchStarted = false;
-        setStretchDoneToday(true);
-        updateJovanFooter();
-
-        // Celebration animation
-        const cel = document.getElementById('stretch-celebrate');
-        if (cel) {
-          cel.classList.remove('hidden');
-          setTimeout(() => cel.classList.add('hidden'), 1200);
-        }
-
-        renderStretchUI();
-        // Auto close after celebration
-        setTimeout(() => closeStretch(), 1400);
       }
     }
 
@@ -1105,6 +1157,36 @@
         stretchRemaining = STRETCH_STEPS[0]?.seconds || 0;
       }
       renderStretchUI();
+    }
+
+    function showStretchSuccessBanner() {
+      const modal = document.getElementById('stretch-success');
+      const streakEl = document.getElementById('stretch-streak');
+      const { count } = getStretchStreak();
+      if (streakEl) streakEl.textContent = `🔥 ${count} Day Streak!`;
+
+      if (modal) modal.classList.remove('hidden');
+
+      // One-time confetti burst
+      try {
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 120,
+            spread: 70,
+            origin: { y: 0.65 },
+            colors: ['#f9a8d4', '#93c5fd', '#a7f3d0', '#fde68a'],
+          });
+        }
+      } catch (_) {}
+
+      // Soft chime (Option B) on banner
+      playChime();
+
+      // Auto-close overlay after a moment
+      setTimeout(() => {
+        if (modal) modal.classList.add('hidden');
+        closeStretch();
+      }, 1800);
     }
 
     function stretchTogglePause() {
@@ -1609,6 +1691,13 @@
     if (stretchStartBtn) stretchStartBtn.onclick = stretchStartOrRestart;
     const stretchPauseBtn = document.getElementById('stretch-pause');
     if (stretchPauseBtn) stretchPauseBtn.onclick = stretchTogglePause;
+
+    const stretchSuccessClose = document.getElementById('stretch-success-close');
+    if (stretchSuccessClose) stretchSuccessClose.onclick = () => {
+      const modal = document.getElementById('stretch-success');
+      if (modal) modal.classList.add('hidden');
+      closeStretch();
+    };
 
     function setView(mode) {
       viewMode = mode;

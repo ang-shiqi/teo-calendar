@@ -513,7 +513,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, documentId } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, documentId, runTransaction, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
     const firebaseConfig = window.FIREBASE_CONFIG;
     if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('PASTE')) {
@@ -538,8 +538,10 @@
 
     // Persist per device/browser
     const UI_STATE_KEY = `teo-calendar:${APP_ID}:uiState`;
+    // Stretch routine sync state (Firestore + local fallback)
     const STRETCH_DONE_KEY = `teo-calendar:${APP_ID}:stretchDone:jovan`;
     const STRETCH_STREAK_KEY = `teo-calendar:${APP_ID}:stretchStreak:jovan`;
+    let stretchRemote = { doneDate: null, lastDone: null, streakCount: 0, loaded: false };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -705,7 +707,24 @@
 
     onAuthStateChanged(auth, (u) => {
       user = u;
-      if (user) setupRealtimeSync();
+      if (user) {
+        // Subscribe to shared stretch status (synced across devices)
+        try {
+          onSnapshot(stretchDocRef(), (snap) => {
+            const d = snap.exists() ? (snap.data() || {}) : {};
+            stretchRemote = {
+              doneDate: (typeof d.doneDate === 'string') ? d.doneDate : null,
+              lastDone: (typeof d.lastDone === 'string') ? d.lastDone : null,
+              streakCount: Number(d.streakCount) || 0,
+              loaded: true,
+            };
+            updateJovanFooter();
+            renderCalendar();
+          });
+        } catch (_) {}
+
+        setupRealtimeSync();
+      }
     });
 
     function eventsCollection() {
@@ -886,8 +905,13 @@
     }
 
     function isStretchDoneToday() {
+      const today = todayKeySGT();
+      if (stretchRemote.loaded && stretchRemote.doneDate) {
+        return stretchRemote.doneDate === today;
+      }
+      // fallback (device-local)
       try {
-        return localStorage.getItem(STRETCH_DONE_KEY) === todayKeySGT();
+        return localStorage.getItem(STRETCH_DONE_KEY) === today;
       } catch (_) {
         return false;
       }
@@ -902,6 +926,9 @@
     }
 
     function getStretchStreak() {
+      if (stretchRemote.loaded) {
+        return { count: Number(stretchRemote.streakCount) || 0, lastDone: stretchRemote.lastDone || null };
+      }
       try {
         const raw = localStorage.getItem(STRETCH_STREAK_KEY);
         if (!raw) return { count: 0, lastDone: null };
@@ -918,26 +945,42 @@
       } catch (_) {}
     }
 
-    function setStretchDoneToday(done) {
-      try {
-        if (done) {
-          const today = todayKeySGT();
-          const { count, lastDone } = getStretchStreak();
-          // compute streak
-          let nextCount = count;
-          if (lastDone === today) {
-            // no change
-          } else if (lastDone === ydayKeySGT()) {
-            nextCount = Math.max(1, count) + 1;
-          } else {
-            nextCount = 1;
-          }
-          localStorage.setItem(STRETCH_DONE_KEY, today);
-          setStretchStreak(nextCount, today);
-        } else {
-          localStorage.removeItem(STRETCH_DONE_KEY);
-        }
-      } catch (_) {}
+    function stretchDocRef() {
+      return doc(db, 'artifacts', APP_ID, 'public', 'data', 'stretches', 'jovan');
+    }
+
+    async function markStretchDoneTodayPublic() {
+      const ref = stretchDocRef();
+      const today = todayKeySGT();
+      const yday = ydayKeySGT();
+
+      // Best-effort local fallback write (for immediate UI even if rules block)
+      try { localStorage.setItem(STRETCH_DONE_KEY, today); } catch (_) {}
+
+      // Transaction so streak increments safely
+      const res = await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        const lastDone = (typeof data.lastDone === 'string') ? data.lastDone : null;
+        const streakCount = Number(data.streakCount) || 0;
+
+        let next = 1;
+        if (lastDone === today) next = Math.max(1, streakCount);
+        else if (lastDone === yday) next = Math.max(1, streakCount) + 1;
+
+        tx.set(ref, {
+          doneDate: today,
+          lastDone: today,
+          streakCount: next,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+
+        return { nextStreak: next, lastDone: today, doneDate: today };
+      });
+
+      // Update in-memory state
+      stretchRemote = { doneDate: res.doneDate, lastDone: res.lastDone, streakCount: res.nextStreak, loaded: true };
+      return res.nextStreak;
     }
 
     function updateJovanFooter() {
@@ -1097,9 +1140,9 @@
           stretchStarted = false;
           stretchPaused = true;
           stretchAwaitNext = false;
-          setStretchDoneToday(true);
-          updateJovanFooter();
-          showStretchSuccessBanner();
+          markStretchDoneTodayPublic()
+            .then((nextStreak) => showStretchSuccessBanner(nextStreak))
+            .catch(() => showStretchSuccessBanner());
         } else {
           stretchAwaitNext = true;
           stretchPaused = true;
@@ -1159,10 +1202,10 @@
       renderStretchUI();
     }
 
-    function showStretchSuccessBanner() {
+    function showStretchSuccessBanner(streakOverride = null) {
       const modal = document.getElementById('stretch-success');
       const streakEl = document.getElementById('stretch-streak');
-      const { count } = getStretchStreak();
+      const count = (typeof streakOverride === 'number') ? streakOverride : (getStretchStreak().count);
       if (streakEl) streakEl.textContent = `🔥 ${count} Day Streak!`;
 
       if (modal) modal.classList.remove('hidden');

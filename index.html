@@ -687,7 +687,11 @@
           </svg>`;
       }
 
-      // default cloud
+      // default cloud (day 0-2): use provided image asset
+      if (kind === 'base') {
+        return `<img src="/assets/clouds/base-cloud.jpg" alt="Cloud" class="w-full h-full object-contain" />`;
+      }
+
       return base(`
         <circle cx="92" cy="70" r="4" fill="#334155"/>
         <circle cx="120" cy="70" r="4" fill="#334155"/>

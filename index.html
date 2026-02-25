@@ -40,6 +40,7 @@
 
     .scrapbook-paper {
       position: relative;
+      overflow: visible;
       background: var(--paper);
       border: 1px solid rgba(15, 23, 42, 0.10);
       box-shadow: 0 22px 55px rgba(15, 23, 42, 0.22);
@@ -108,7 +109,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      transform: translateY(-6px);
+      transform: translateY(6px); /* sit lower on the paper */
     }
     .washi-banner svg { display: block; }
 
@@ -116,11 +117,13 @@
 
     /* Wooden frame around the paper */
     .wood-frame {
-      padding: 18px;
+      padding: 28px;
+      padding-top: 44px; /* breathing room so header/ribbons don't get cropped */
       border-radius: 26px;
       background: linear-gradient(180deg, #c58a52, #a86b3c);
       box-shadow: 0 22px 55px rgba(15,23,42,0.25);
       position: relative;
+      overflow: visible;
     }
     .wood-frame::before {
       content: "";
@@ -135,36 +138,27 @@
     /* Term ribbon pinned to top-right of paper */
     .term-ribbon {
       position: absolute;
-      top: 34px;
-      right: -10px;
-      padding: 8px 14px;
+      top: 54px;
+      right: -6px;
+      padding: 10px 16px;
       background: #ff86b8;
       color: #7a1f44;
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.5px;
       border-radius: 12px;
       transform: rotate(10deg);
-      box-shadow: 0 10px 18px rgba(15,23,42,0.16);
+      box-shadow: 0 14px 22px rgba(15,23,42,0.18);
       border: 1px solid rgba(219,39,119,0.22);
-      z-index: 4;
+      z-index: 6;
+      clip-path: polygon(0% 15%, 92% 0%, 100% 50%, 92% 100%, 0% 85%, 6% 50%);
     }
-    .term-ribbon::after {
-      content: "";
-      position: absolute;
-      right: 10px;
-      bottom: -10px;
-      width: 14px;
-      height: 14px;
-      transform: rotate(45deg);
-      background: #ff86b8;
-      border-right: 1px solid rgba(219,39,119,0.22);
-      border-bottom: 1px solid rgba(219,39,119,0.22);
-    }
+    .term-ribbon::after { content: none; }
 
     /* Stickers */
     .sticker {
       position: absolute;
-      right: 8px;
-      bottom: 8px;
+      right: 14px;
+      bottom: 14px;
       padding: 8px 10px;
       background: rgba(255,255,255,0.95);
       border-radius: 18px;
@@ -179,6 +173,9 @@
       background: #fff6bf;
       border-color: rgba(122,31,68,0.18);
       transform: rotate(8deg);
+      padding: 14px 16px;
+      border-radius: 20px;
+      font-size: 16px;
     }
     .sticker-wa1 {
       background: #d6ecff;
@@ -948,11 +945,19 @@
 
           // Stickers: SUPER EXAM
           const hasExam = !!firstMatch((s) => s.includes('exam') || s.includes('psle') || s.includes('wa'));
-          if (hasExam) {
-            const st = document.createElement('div');
-            st.className = 'sticker sticker-exam';
-            st.textContent = 'SUPER EXAM!';
-            cell.appendChild(st);
+          const paper = document.querySelector('.scrapbook-paper');
+          if (paper) {
+            const existing = paper.querySelector('.sticker-exam');
+            if (hasExam) {
+              if (!existing) {
+                const st = document.createElement('div');
+                st.className = 'sticker sticker-exam';
+                st.textContent = 'SUPER EXAM!';
+                paper.appendChild(st);
+              }
+            } else {
+              if (existing) existing.remove();
+            }
           }
 
           // Render separate chips so different items can keep their own colors

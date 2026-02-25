@@ -368,6 +368,38 @@
     <div id="calendar-grid" class="grid grid-cols-7 auto-rows-[150px] sm:auto-rows-[220px] bg-slate-200 gap-px">
       <!-- injected -->
     </div>
+
+    <!-- Jovan-only footer card (shown when filter = Jovan) -->
+    <div id="jovan-footer" class="hidden px-4 sm:px-6 py-4 border-t border-slate-200 bg-white">
+      <div class="rounded-2xl bg-[#eef6ff] border border-[#cfe3ff] shadow-sm p-4">
+        <div class="text-sm sm:text-base font-bold text-slate-800 mb-2">☁️ Jovan's Stretching Routine ☁️</div>
+        <div class="text-xs sm:text-sm text-slate-700 leading-relaxed space-y-2">
+          <div>
+            <div class="font-bold">Daily Flexibility (Evening)</div>
+            <div>Calf Stretch: 1 min/leg (30s straight, 30s bent)</div>
+            <div>Hamstring Hinge: 3 x 30s</div>
+            <div>Frog Stretch: 2 mins</div>
+            <div>Figure-4 Glute: 45s/leg</div>
+            <div>Couch Stretch: 2 mins/leg</div>
+            <div>Bonus: Doorway Chest & Dead Hang (1 min each)</div>
+          </div>
+          <div>
+            <div class="font-bold">🛡️ Twice-a-Week Knee Armor</div>
+            <div>Glute Bridges: 2 x 10 (2s squeeze)</div>
+            <div>Side Leg Raises: Right (3x15), Left (2x15)</div>
+            <div>Step Downs: Right (3x10), Left (2x10) — 3s slow descent</div>
+          </div>
+          <div>
+            <div class="font-bold">Golden Rules</div>
+            <div>✨ Breathe deep. ✨ No sharp pain. ✨ Consistency is key!</div>
+          </div>
+          <details class="mt-2">
+            <summary class="cursor-pointer font-bold">Copy-paste single line</summary>
+            <div class="mt-2 select-text font-mono text-[11px] sm:text-xs bg-white/70 border border-slate-200 rounded-xl p-3">☁️ JOVAN'S STRETCHING ROUTINE ☁️ DAILY: Calves (1m/leg), Hams (3x30s), Frog (2m), Glutes (45s/leg), Couch (2m/leg), Chest/Hang (1m). 🛡️ KNEE ARMOR (2x/wk): Bridges (2x10), Side Raises (3x15R/2x15L), Step Downs (3x10R/2x10L - 3s down). RULES: Breathe. No pain. Be consistent!</div>
+          </details>
+        </div>
+      </div>
+    </div>
       </div>
     </div>
   </div>
@@ -773,8 +805,15 @@
       closeModal();
     }
 
+    function updateJovanFooter() {
+      const el = document.getElementById('jovan-footer');
+      if (!el) return;
+      el.classList.toggle('hidden', currentUserFilter !== 'jovan');
+    }
+
     function renderCalendar() {
       calendarGrid.innerHTML = '';
+      updateJovanFooter();
 
       // Week view: make cells taller and avoid per-cell scrolling (show +more instead)
       if (viewMode === 'week') {
@@ -1280,6 +1319,7 @@
       currentUserFilter = calendarSelect.value;
       saveUiState();
       renderCalendar();
+      scheduleSync();
     };
 
     initAuth();

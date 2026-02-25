@@ -137,6 +137,9 @@
     // Filter: 'ALL' or one of USERS ids
     let currentUserFilter = 'ALL';
 
+    // Persist per device/browser
+    const UI_STATE_KEY = `teo-calendar:${APP_ID}:uiState`;
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -151,8 +154,42 @@
     let canEdit = false;
     let viewMode = "month"; // "month" | "week"
     let editingItems = [];
-    // Mobile: default to Week view (less cramped than Month)
-    if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches) {
+
+    function loadUiState() {
+      try {
+        const raw = localStorage.getItem(UI_STATE_KEY);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+
+        // user filter
+        if (typeof s?.user === 'string') currentUserFilter = s.user;
+
+        // view mode
+        if (s?.view === 'month' || s?.view === 'week') viewMode = s.view;
+
+        // date
+        if (typeof s?.date === 'string') {
+          const d = new Date(s.date);
+          if (!Number.isNaN(d.getTime())) currentDate = d;
+        }
+      } catch (_) {}
+    }
+
+    function saveUiState() {
+      try {
+        localStorage.setItem(UI_STATE_KEY, JSON.stringify({
+          user: currentUserFilter,
+          view: viewMode,
+          date: currentDate.toISOString(),
+        }));
+      } catch (_) {}
+    }
+
+    // Load persisted UI state (per device/browser)
+    loadUiState();
+
+    // Mobile: if no saved state set view to Week (less cramped than Month)
+    if (!localStorage.getItem(UI_STATE_KEY) && window.matchMedia && window.matchMedia('(max-width: 640px)').matches) {
       viewMode = 'week';
     }
 
@@ -813,6 +850,7 @@
       } else {
         currentDate.setDate(currentDate.getDate() - 7);
       }
+      saveUiState();
       renderCalendar();
     };
     document.getElementById('next').onclick = () => {
@@ -821,10 +859,12 @@
       } else {
         currentDate.setDate(currentDate.getDate() + 7);
       }
+      saveUiState();
       renderCalendar();
     };
     document.getElementById('today-btn').onclick = () => {
       currentDate = new Date();
+      saveUiState();
       renderCalendar();
     };
     jumpBtn.onclick = jumpTo;
@@ -838,6 +878,7 @@
         const d = new Date(Number(mm[1]), Number(mm[2]) - 1, 1);
         if (Number.isNaN(d.getTime())) return;
         currentDate = d;
+        saveUiState();
         renderCalendar();
         // Hide again after choosing
         jumpMonth.classList.add('hidden');
@@ -857,6 +898,7 @@
       const monthActive = mode === 'month';
       viewMonthBtn.className = monthActive ? 'px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm' : 'px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100';
       viewWeekBtn.className = !monthActive ? 'px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm' : 'px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100';
+      saveUiState();
       renderCalendar();
     }
 
@@ -884,6 +926,7 @@
     calendarSelect.value = currentUserFilter;
     calendarSelect.onchange = () => {
       currentUserFilter = calendarSelect.value;
+      saveUiState();
       renderCalendar();
     };
 

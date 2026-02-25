@@ -375,7 +375,21 @@
         const visible = currentUserFilter === 'ALL' || (Array.isArray(ev.users) && ev.users.includes(currentUserFilter));
         if (visible && ev.text) {
           const preview = document.createElement('div');
-          preview.className = 'text-[10px] leading-tight text-slate-600 line-clamp-3 overflow-hidden bg-indigo-50 p-1 rounded border-l-2 border-indigo-400';
+          const t = (ev.text || '');
+          const lines = t.split(/
++/).map(x => x.trim()).filter(Boolean);
+
+          const hasPublicHoliday = lines.some(l => l.toLowerCase().includes('public holiday'));
+          const hasSchoolHoliday = lines.some(l => l.toLowerCase().includes('school holiday') || l.toLowerCase().includes('school vacation') || l.toLowerCase().includes('school day off'));
+
+          const base = 'text-[10px] leading-tight line-clamp-3 overflow-hidden p-1 rounded border-l-2';
+
+          // Priority: Public Holiday (red) > School (orange) > normal (indigo)
+          const colorClass = hasPublicHoliday
+            ? 'bg-red-50 text-red-700 border-red-400'
+            : (hasSchoolHoliday ? 'bg-orange-50 text-orange-700 border-orange-400' : 'bg-indigo-50 text-slate-600 border-indigo-400');
+
+          preview.className = `${base} ${colorClass}`;
           preview.textContent = ev.text;
           cell.appendChild(preview);
         }

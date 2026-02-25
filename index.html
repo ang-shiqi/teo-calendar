@@ -617,26 +617,7 @@
       }
 
       if (kind === 'titan') {
-        return `
-          <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
-            <defs>
-              <linearGradient id="gal" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0" stop-color="#1e293b"/>
-                <stop offset="0.5" stop-color="#4c1d95"/>
-                <stop offset="1" stop-color="#0ea5e9"/>
-              </linearGradient>
-            </defs>
-            <path d="M55 90c-20 0-35-12-35-28 0-14 11-26 26-28 6-16 22-27 41-27 20 0 37 12 43 29 16 2 28 14 28 29 0 17-15 30-34 30H55z"
-                  fill="url(#gal)" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
-            <circle cx="70" cy="46" r="2" fill="#fff"/>
-            <circle cx="90" cy="36" r="2" fill="#fff"/>
-            <circle cx="120" cy="44" r="2" fill="#fff"/>
-            <circle cx="140" cy="60" r="2" fill="#fff"/>
-            <circle cx="92" cy="70" r="4" fill="#fff"/>
-            <circle cx="120" cy="70" r="4" fill="#fff"/>
-            <path d="M96 80 Q105 88 114 80" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
-            <path d="M150 86 h20 v16 a8 8 0 0 1-8 8 h-4 a8 8 0 0 1-8-8z" fill="#fbbf24" stroke="#a16207" stroke-width="5"/>
-          </svg>`;
+        return `<img src="/assets/clouds/titan.png" alt="Titan Cloud" class="w-full h-full object-contain" />`;
       }
 
       // default cloud (day 0-2): use provided image asset

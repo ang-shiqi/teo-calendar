@@ -72,7 +72,7 @@
     </div>
 
     <!-- Calendar Grid -->
-    <div id="calendar-grid" class="grid grid-cols-7 auto-rows-[110px] sm:auto-rows-[150px] bg-slate-200 gap-px">
+    <div id="calendar-grid" class="grid grid-cols-7 auto-rows-[150px] sm:auto-rows-[220px] bg-slate-200 gap-px">
       <!-- injected -->
     </div>
   </div>
@@ -362,11 +362,11 @@
 
       // Week view: make cells taller and avoid per-cell scrolling (show +more instead)
       if (viewMode === 'week') {
-        calendarGrid.classList.remove('auto-rows-[110px]', 'sm:auto-rows-[150px]');
+        calendarGrid.classList.remove('auto-rows-[150px]', 'sm:auto-rows-[220px]');
         calendarGrid.classList.add('auto-rows-[200px]', 'sm:auto-rows-[240px]');
       } else {
         calendarGrid.classList.remove('auto-rows-[200px]', 'sm:auto-rows-[240px]');
-        calendarGrid.classList.add('auto-rows-[110px]', 'sm:auto-rows-[150px]');
+        calendarGrid.classList.add('auto-rows-[150px]', 'sm:auto-rows-[220px]');
       }
 
       if (viewMode === 'month') {

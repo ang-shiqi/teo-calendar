@@ -565,7 +565,7 @@
       const num = document.createElement('span');
       // Today marker: star-shaped badge (CSS clip-path)
       const todayStar = isToday ? 'bg-pink-500 text-white [clip-path:polygon(50%_0%,61%_35%,98%_35%,68%_57%,79%_91%,50%_70%,21%_91%,32%_57%,2%_35%,39%_35%)]' : '';
-      num.className = `text-sm font-semibold w-8 h-8 flex items-center justify-center mb-1 ${todayStar}`;
+      num.className = `text-base font-extrabold w-10 h-10 flex items-center justify-center mb-1 ${todayStar}`;
       num.textContent = day;
       cell.appendChild(num);
 

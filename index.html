@@ -4,11 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Shared Cloud Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Global font */
+    body { font-family: 'Quicksand', ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
 
     /* --- Kawaii Scrapbook aesthetic --- */
     :root{
@@ -53,34 +59,127 @@
     }
 
     /* cute tape */
-    .scrapbook-tape {
+    /* Cute pins (3D-ish) */
+    .scrapbook-pin {
       position: absolute;
-      top: -14px;
-      width: 92px;
-      height: 34px;
-      background: rgba(255, 231, 158, 0.70);
-      border: 1px solid rgba(120, 90, 30, 0.18);
-      box-shadow: var(--shadow-soft);
-      border-radius: 10px;
-      backdrop-filter: blur(2px);
-      transform: rotate(-8deg);
+      top: -12px;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      box-shadow: 0 10px 18px rgba(0,0,0,0.18);
+      z-index: 3;
+    }
+    .scrapbook-pin::after {
+      content: "";
+      position: absolute;
+      inset: 3px 4px auto 4px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.65);
+      transform: rotate(-12deg);
+    }
+    .scrapbook-pin.left { left: 22px; background: radial-gradient(circle at 30% 30%, #fff, #ff5fa2 40%, #cc2a6f 85%); }
+    .scrapbook-pin.right { right: 22px; background: radial-gradient(circle at 30% 30%, #fff, #7cdbff 40%, #1f8db8 85%); }
+
+    /* Washi tape banner for month header */
+    .washi-banner {
+      position: relative;
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 14px;
+      background: repeating-linear-gradient(
+        135deg,
+        rgba(255, 182, 213, 0.95),
+        rgba(255, 182, 213, 0.95) 12px,
+        rgba(255, 210, 232, 0.95) 12px,
+        rgba(255, 210, 232, 0.95) 24px
+      );
+      box-shadow: 0 10px 18px rgba(15,23,42,0.12);
+      border: 1px solid rgba(219, 39, 119, 0.18);
+    }
+    .washi-banner::before,
+    .washi-banner::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 14px;
+      height: 22px;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.40);
+      filter: blur(0.2px);
+    }
+    .washi-banner::before { left: -8px; border-radius: 8px 0 0 8px; transform: translateY(-50%) rotate(-6deg); }
+    .washi-banner::after { right: -8px; border-radius: 0 8px 8px 0; transform: translateY(-50%) rotate(6deg); }
+
+    /* Decorative clouds + sun */
+    .kawaii-cloud {
+      position: absolute;
+      top: -18px;
+      width: 120px;
+      height: 52px;
+      background: rgba(255,255,255,0.92);
+      border-radius: 999px;
+      box-shadow: 0 10px 18px rgba(15,23,42,0.10);
+      z-index: 1;
+    }
+    .kawaii-cloud::before,
+    .kawaii-cloud::after {
+      content: "";
+      position: absolute;
+      background: rgba(255,255,255,0.92);
+      border-radius: 999px;
+    }
+    .kawaii-cloud::before { width: 54px; height: 54px; left: 14px; top: -18px; }
+    .kawaii-cloud::after { width: 64px; height: 64px; right: 12px; top: -26px; }
+
+    .kawaii-sun {
+      position: absolute;
+      top: -18px;
+      right: 26px;
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #fffbe6, #ffd36e 45%, #ffb703 88%);
+      box-shadow: 0 12px 18px rgba(15,23,42,0.12);
+      z-index: 1;
+    }
+    .kawaii-sun::before {
+      content: "";
+      position: absolute;
+      inset: -10px;
+      background: conic-gradient(from 0deg, rgba(255, 183, 3, 0.0), rgba(255, 183, 3, 0.35), rgba(255, 183, 3, 0.0));
+      border-radius: 999px;
+      filter: blur(0.2px);
+      opacity: 0.35;
+    }
+    .kawaii-sun-face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: rgba(124, 45, 18, 0.80);
+      font-size: 14px;
       z-index: 2;
     }
-    .scrapbook-tape.left { left: 22px; }
-    .scrapbook-tape.right { right: 22px; transform: rotate(10deg); }
   </style>
 </head>
 
 <body class="scrapbook text-slate-800 font-sans antialiased min-h-screen flex flex-col items-center py-10 px-4 sm:px-6">
   <div class="w-full max-w-5xl scrapbook-paper">
-    <div class="scrapbook-tape left" aria-hidden="true"></div>
-    <div class="scrapbook-tape right" aria-hidden="true"></div>
+    <div class="scrapbook-pin left" aria-hidden="true"></div>
+    <div class="scrapbook-pin right" aria-hidden="true"></div>
 
     <div class="paper-inner overflow-hidden">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between px-6 py-4 border-b border-slate-200 bg-white gap-4">
+    <div class="relative flex flex-col md:flex-row md:items-center justify-between px-6 py-6 border-b border-slate-200 bg-white gap-4">
+      <!-- Decorative clouds + sun -->
+      <div class="kawaii-cloud" style="left: 22px" aria-hidden="true"></div>
+      <div class="kawaii-cloud" style="left: 170px; transform: scale(0.8); opacity: 0.95; top: -10px" aria-hidden="true"></div>
+      <div class="kawaii-sun" aria-hidden="true"><div class="kawaii-sun-face">^‿^</div></div>
       <div>
-        <h2 id="current-month-year" class="text-2xl font-bold text-slate-800">Month Year</h2>
+        <h2 id="current-month-year" class="text-2xl font-bold text-slate-800"><span class="washi-banner">Month Year</span></h2>
         <div id="sync-status" class="text-xs text-amber-500 font-medium flex items-center gap-2">
           <i data-lucide="refresh-cw" class="w-3 h-3 animate-spin"></i>
           <span>Connecting…</span>
@@ -617,10 +716,16 @@
       renderCalendar();
     }
 
+    function setMonthTitle(text) {
+      const span = currentMonthYear.querySelector('.washi-banner');
+      if (span) span.textContent = text;
+      else currentMonthYear.textContent = text;
+    }
+
     function renderMonth() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
-      currentMonthYear.textContent = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate);
+      setMonthTitle(new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(currentDate));
 
       const firstDay = new Date(year, month, 1).getDay();
       const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -646,7 +751,7 @@
 
       const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
       const title = `${fmt.format(start)} – ${fmt.format(end)}, ${end.getFullYear()}`;
-      currentMonthYear.textContent = title;
+      setMonthTitle(title);
 
       const today = new Date();
       for (let i = 0; i < 7; i++) {
@@ -731,7 +836,7 @@
 
         if (sortedItems.length > 0) {
           // Render separate chips so different items can keep their own colors
-          const chipBase = 'text-[10px] leading-tight px-1.5 py-1 rounded border-l-2';
+          const chipBase = 'text-[10px] leading-tight px-2 py-1.5 rounded-2xl border border-transparent shadow-sm';
 
           function formatTimes12h(line) {
             // Display-only: convert 24h times like 18:30 -> 6.30pm
@@ -743,6 +848,24 @@
               if (h12 === 0) h12 = 12;
               return `${h12}.${m}${suffix}`;
             });
+          }
+
+          function emojiForLine(line) {
+            const s = (line || '').toLowerCase();
+            if (s.includes('climbing') || s.includes('bouldering') || s.includes('top rope') || s.includes('lead')) return '🧗';
+            if (s.includes('revision time')) return '📖';
+            if (s.includes('science')) return '🧪';
+            if (s.includes('exam') || s.includes('psle') || s.includes('wa')) return '📝';
+            if (s.includes('spelling')) return '🔤';
+            if (s.includes('swimming')) return '🏊';
+            if (s.includes('skating')) return '⛸️';
+            if (s.includes('tuition')) return '📚';
+            if (s.includes('competition')) return '🏆';
+            if (s.includes('birthday')) return '🎂';
+            if (s.includes('public holiday')) return '🎉';
+            if (s.includes('school vacation') || s.includes('school holiday') || s.includes('school day off')) return '🏫';
+            if (s.includes('cca')) return '🎽';
+            return '';
           }
 
           function chipClassForLine(line) {
@@ -799,7 +922,9 @@
             const chip = document.createElement('div');
             chip.className = `${chipBase} ${chipClassForLine(item.text)} whitespace-normal break-words`;
             chip.style.wordBreak = 'break-word';
-            chip.textContent = formatTimes12h(item.text);
+            const em = emojiForLine(item.text);
+            const shown = formatTimes12h(item.text);
+            chip.textContent = em ? `${em} ${shown}` : shown;
             stack.appendChild(chip);
           });
 

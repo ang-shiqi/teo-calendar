@@ -381,35 +381,44 @@
           const t = (ev.text || '');
           const lines = t.split(/\n+/).map(x => x.trim()).filter(Boolean);
 
-          const hasPublicHoliday = lines.some(l => l.toLowerCase().includes('public holiday'));
-          const hasSchoolHoliday = lines.some(l => l.toLowerCase().includes('school holiday') || l.toLowerCase().includes('school vacation') || l.toLowerCase().includes('school day off'));
-          const hasBirthday = lines.some(l => (l || '').toLowerCase().includes('birthday'));
-          const hasExam = lines.some(l => {
-            const s = (l || '').toLowerCase();
-            // WA / WA1 / WA2 / WA3..., PSLE, EOY, etc.
-            return s.includes('psle')
-              || s.includes('weighted assessment')
-              || /\bwa\d*\b/i.test(l)
-              || s.includes('eoy')
-              || s.includes('exam');
+          // Render separate chips so different items can keep their own colors
+          const chipBase = 'text-[10px] leading-tight px-1.5 py-1 rounded border-l-2';
+
+          function chipClassForLine(line) {
+            const s = (line || '').toLowerCase();
+            const isPublicHoliday = s.includes('public holiday');
+            const isExam = s.includes('psle') || s.includes('weighted assessment') || /\bwa\d*\b/i.test(line) || s.includes('eoy') || s.includes('exam');
+            const isBirthday = s.includes('birthday');
+            const isSchool = s.includes('school holiday') || s.includes('school vacation') || s.includes('school day off');
+
+            if (isPublicHoliday) return 'bg-red-50 text-red-700 border-red-400';
+            if (isExam) return 'bg-purple-50 text-purple-700 border-purple-400';
+            if (isBirthday) return 'bg-pink-50 text-pink-700 border-pink-400';
+            if (isSchool) return 'bg-orange-50 text-orange-700 border-orange-400';
+            return 'bg-indigo-50 text-slate-600 border-indigo-400';
+          }
+
+          const maxChips = 3;
+          const toShow = lines.slice(0, maxChips);
+
+          const stack = document.createElement('div');
+          stack.className = 'flex flex-col gap-1';
+
+          toShow.forEach(line => {
+            const chip = document.createElement('div');
+            chip.className = `${chipBase} ${chipClassForLine(line)} line-clamp-1 overflow-hidden`;
+            chip.textContent = line;
+            stack.appendChild(chip);
           });
 
-          const base = 'text-[10px] leading-tight line-clamp-3 overflow-hidden p-1 rounded border-l-2';
+          if (lines.length > maxChips) {
+            const more = document.createElement('div');
+            more.className = 'text-[10px] text-slate-400';
+            more.textContent = `+${lines.length - maxChips} more`;
+            stack.appendChild(more);
+          }
 
-          // Priority: Public Holiday (red) > Exams (purple) > Birthdays (pink) > School (orange) > normal (indigo)
-          const colorClass = hasPublicHoliday
-            ? 'bg-red-50 text-red-700 border-red-400'
-            : (hasExam
-                ? 'bg-purple-50 text-purple-700 border-purple-400'
-                : (hasBirthday
-                    ? 'bg-pink-50 text-pink-700 border-pink-400'
-                    : (hasSchoolHoliday
-                        ? 'bg-orange-50 text-orange-700 border-orange-400'
-                        : 'bg-indigo-50 text-slate-600 border-indigo-400')));
-
-          preview.className = `${base} ${colorClass}`;
-          preview.textContent = ev.text;
-          cell.appendChild(preview);
+          cell.appendChild(stack);
         }
       }
 

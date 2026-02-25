@@ -1199,6 +1199,7 @@
       }
       saveUiState();
       renderCalendar();
+      scheduleSync();
     };
     document.getElementById('next').onclick = () => {
       if (viewMode === 'month') {
@@ -1208,11 +1209,13 @@
       }
       saveUiState();
       renderCalendar();
+      scheduleSync();
     };
     document.getElementById('today-btn').onclick = () => {
       currentDate = new Date();
       saveUiState();
       renderCalendar();
+      scheduleSync();
     };
     jumpBtn.onclick = jumpTo;
 
@@ -1227,6 +1230,7 @@
         currentDate = d;
         saveUiState();
         renderCalendar();
+        scheduleSync();
         // Hide again after choosing
         jumpMonth.classList.add('hidden');
       };
@@ -1247,6 +1251,7 @@
       viewWeekBtn.className = !monthActive ? 'px-3 py-1.5 text-sm font-medium rounded-md bg-white text-slate-700 shadow-sm' : 'px-3 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100';
       saveUiState();
       renderCalendar();
+      scheduleSync();
     }
 
     viewMonthBtn.onclick = () => setView('month');

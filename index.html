@@ -887,6 +887,28 @@
     let stretchIdx = 0;
     let stretchRemaining = 0;
     let stretchTimer = null;
+    let stretchAwaitNext = false;
+
+    function playChime() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = 880;
+        g.gain.value = 0.001;
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start();
+        // quick ramp
+        g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+        o.stop(ctx.currentTime + 0.38);
+        o.onended = () => ctx.close().catch(() => {});
+      } catch (_) {}
+    }
 
     function stretchTotalSeconds() {
       return STRETCH_STEPS.reduce((a, s) => a + (s.seconds || 0), 0);
@@ -924,7 +946,12 @@
       }
       if (btnPause) {
         btnPause.textContent = stretchPaused ? 'Resume' : 'Pause';
-        btnPause.disabled = !stretchStarted;
+        btnPause.disabled = !stretchStarted || stretchAwaitNext;
+      }
+      if (btnNext) {
+        // When a step finishes, require manual Next.
+        btnNext.classList.toggle('ring-2', !!stretchAwaitNext);
+        btnNext.classList.toggle('ring-pink-300', !!stretchAwaitNext);
       }
     }
 
@@ -936,26 +963,25 @@
       stretchOpen = true;
       stretchPaused = false;
       stretchStarted = false;
+      stretchAwaitNext = false;
       stretchIdx = 0;
       stretchRemaining = STRETCH_STEPS[0]?.seconds || 0;
       renderStretchUI();
       if (stretchTimer) clearInterval(stretchTimer);
       stretchTimer = setInterval(() => {
-        if (!stretchOpen || stretchPaused || !stretchStarted) return;
+        if (!stretchOpen || stretchPaused || !stretchStarted || stretchAwaitNext) return;
         if (stretchRemaining > 1) {
           stretchRemaining -= 1;
           renderStretchUI();
           return;
         }
-        // advance
-        if (stretchIdx < STRETCH_STEPS.length - 1) {
-          stretchIdx += 1;
-          stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
-          renderStretchUI();
-        } else {
-          stretchPaused = true;
-          renderStretchUI();
-        }
+
+        // Step finished: chime + wait for manual Next
+        stretchRemaining = 0;
+        playChime();
+        stretchAwaitNext = true;
+        stretchPaused = true;
+        renderStretchUI();
       }, 1000);
     }
 
@@ -965,6 +991,7 @@
       stretchOpen = false;
       stretchStarted = false;
       stretchPaused = false;
+      stretchAwaitNext = false;
       if (stretchTimer) {
         clearInterval(stretchTimer);
         stretchTimer = null;
@@ -975,6 +1002,14 @@
       if (stretchIdx < STRETCH_STEPS.length - 1) {
         stretchIdx += 1;
         stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
+        stretchAwaitNext = false;
+        stretchPaused = false;
+        stretchStarted = true;
+        renderStretchUI();
+      } else {
+        // finished routine
+        stretchAwaitNext = false;
+        stretchPaused = true;
         renderStretchUI();
       }
     }
@@ -983,6 +1018,9 @@
       if (stretchIdx > 0) {
         stretchIdx -= 1;
         stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
+        stretchAwaitNext = false;
+        stretchPaused = true;
+        stretchStarted = false;
         renderStretchUI();
       }
     }
@@ -991,10 +1029,12 @@
       if (!stretchStarted) {
         stretchStarted = true;
         stretchPaused = false;
+        stretchAwaitNext = false;
       } else {
         // Restart from beginning
         stretchStarted = true;
         stretchPaused = false;
+        stretchAwaitNext = false;
         stretchIdx = 0;
         stretchRemaining = STRETCH_STEPS[0]?.seconds || 0;
       }

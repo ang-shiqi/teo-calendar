@@ -10,6 +10,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <!-- Note: app is vanilla JS (not React); animations implemented via CSS keyframes -->
   <style>
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -207,6 +208,7 @@
     }
 
     @keyframes pop { from { transform: scale(0.8); } to { transform: scale(1); } }
+    @keyframes levelup { 0% { transform: scale(0.82); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
 
     /* Date-specific sticker */
     .date-sticker {
@@ -343,6 +345,9 @@
         <button id="jump-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
           Jump…
         </button>
+        <button id="badges-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-extrabold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Badges
+        </button>
         <input id="jump-month" type="month" class="hidden sm:w-auto px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg border border-slate-200" />
 
         <div class="w-full sm:w-auto flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1 justify-between">
@@ -466,8 +471,10 @@
                   <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
                 </svg>
               </div>
+              <div id="stretch-success-icon" class="mt-2 text-4xl">☁️</div>
               <div class="mt-2 text-2xl font-extrabold text-slate-800">Daily Routine Complete! ✨</div>
               <div id="stretch-streak" class="mt-2 text-xl font-extrabold text-slate-900">🔥 0 Day Streak!</div>
+              <div id="stretch-science" class="mt-3 text-sm font-bold text-slate-700"></div>
               <button id="stretch-success-close" class="mt-5 w-full px-4 py-4 rounded-2xl bg-gradient-to-r from-pink-200 via-sky-200 to-teal-200 text-slate-900 font-extrabold shadow-md hover:shadow-lg active:scale-[0.99] transition">
                 Yay!
               </button>
@@ -475,6 +482,20 @@
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- Badges Page (overlay) -->
+  <div id="badges-modal" class="hidden fixed inset-0 z-[150]">
+    <div id="badges-backdrop" class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="w-full max-w-3xl bg-white rounded-[28px] shadow-2xl border border-slate-200 overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <div class="text-lg font-extrabold text-slate-800">Jovan Cloud Badges</div>
+          <button id="badges-close" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold">Close</button>
+        </div>
+        <div id="badges-grid" class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
     </div>
   </div>
@@ -544,7 +565,34 @@
     // Stretch routine sync state (Firestore + local fallback)
     const STRETCH_DONE_KEY = `teo-calendar:${APP_ID}:stretchDone:jovan`;
     const STRETCH_STREAK_KEY = `teo-calendar:${APP_ID}:stretchStreak:jovan`;
+    const STRETCH_HIGHEST_KEY = `teo-calendar:${APP_ID}:stretchHighestLevel:jovan`;
     let stretchRemote = { doneDate: null, lastDone: null, streakCount: 0, loaded: false };
+
+    const milestoneMap = [
+      { days: 3, key: 'misty', title: 'Getting Misty', icon: '☁️😊', science: 'Brain Shortcut — Your brain now remembers the moves easily.' },
+      { days: 7, key: 'warrior', title: 'Week One Warrior', icon: '☁️🥾', science: 'Stronger Springs — Your knee tendons are getting tougher for big landings.' },
+      { days: 14, key: 'sender', title: 'The Send-er', icon: '☁️😎🧗', science: 'Super Reach — Your hips are unlocking for high foot-holds.' },
+      { days: 21, key: 'nimbus', title: 'Nimbus Master', icon: '🌈✨☁️👑', science: 'Auto-Pilot Mode — You’re officially a pro at recovery.' },
+      { days: 50, key: 'mountain', title: 'Mountain King', icon: '⛰️☁️', science: 'Climbing Armor — Your body is now injury-proofed.' },
+      { days: 75, key: 'cape', title: 'Gravity Defier', icon: '🦸✨☁️', science: 'Power Spring — More pop for dynos and explosive moves.' },
+      { days: 100, key: 'titan', title: 'Titan of the Wall', icon: '🌌☁️🏆', science: 'Unbreakable — A permanent foundation for elite climbing.' },
+    ];
+
+    function currentMilestone(streak) {
+      let m = null;
+      for (const x of milestoneMap) {
+        if (streak >= x.days) m = x;
+      }
+      return m;
+    }
+
+    function getHighestUnlockedLevel() {
+      try { return Number(localStorage.getItem(STRETCH_HIGHEST_KEY)) || 0; } catch (_) { return 0; }
+    }
+
+    function setHighestUnlockedLevel(n) {
+      try { localStorage.setItem(STRETCH_HIGHEST_KEY, String(n)); } catch (_) {}
+    }
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -995,7 +1043,9 @@
       const streakEl = document.getElementById('jovan-streak');
       if (streakEl) {
         const { count } = getStretchStreak();
-        streakEl.textContent = `🔥 ${count} Day Streak`;
+        const ms = currentMilestone(count);
+        const name = ms ? ` · ${ms.title}` : '';
+        streakEl.textContent = `🔥 ${count} Day Streak${name}`;
       }
 
       // Update footer button state
@@ -1013,10 +1063,13 @@
         }
       }
 
-      // Update dropdown indicator next to Jovan
+      // Update dropdown indicator next to Jovan (evolution icon)
       const opt = calendarSelect?.querySelector('option[value="jovan"]');
       if (opt) {
-        opt.textContent = done ? 'Jovan 🌈✨' : 'Jovan ☁️';
+        const { count } = getStretchStreak();
+        const ms = currentMilestone(count);
+        const icon = ms?.icon || (done ? '🌈✨☁️' : '☁️');
+        opt.textContent = `Jovan ${icon}`;
       }
     }
 
@@ -1212,19 +1265,54 @@
       renderStretchUI();
     }
 
+    function playTriumph() {
+      // Slightly more "triumph" than the soft chime
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'triangle';
+        o.frequency.value = 523.25; // C5
+        g.gain.value = 0.001;
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start();
+        g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+        o.frequency.exponentialRampToValueAtTime(784, ctx.currentTime + 0.18); // G5
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+        o.stop(ctx.currentTime + 0.62);
+        o.onended = () => ctx.close().catch(() => {});
+      } catch (_) {}
+    }
+
     function showStretchSuccessBanner(streakOverride = null) {
       const modal = document.getElementById('stretch-success');
       const streakEl = document.getElementById('stretch-streak');
+      const iconEl = document.getElementById('stretch-success-icon');
+      const sciEl = document.getElementById('stretch-science');
+
       const count = (typeof streakOverride === 'number') ? streakOverride : (getStretchStreak().count);
       if (streakEl) streakEl.textContent = `🔥 ${count} Day Streak!`;
 
+      const ms = currentMilestone(count);
+      if (iconEl) iconEl.textContent = ms?.icon || '☁️';
+      if (sciEl) sciEl.textContent = ms ? `Science Power-Up: ${ms.science}` : 'Science Power-Up: Consistency is building your recovery engine.';
+
+      // Track highest unlock
+      const highest = getHighestUnlockedLevel();
+      if (ms && ms.days > highest) setHighestUnlockedLevel(ms.days);
+
       if (modal) modal.classList.remove('hidden');
 
-      // One-time confetti burst
+      // Confetti + triumph only on milestone unlock
+      const isLevelUp = !!(ms && ms.days > highest);
+
       try {
         if (typeof confetti === 'function') {
           confetti({
-            particleCount: 120,
+            particleCount: isLevelUp ? 180 : 90,
             spread: 70,
             origin: { y: 0.65 },
             colors: ['#f9a8d4', '#93c5fd', '#a7f3d0', '#fde68a'],
@@ -1232,14 +1320,14 @@
         }
       } catch (_) {}
 
-      // Soft chime (Option B) on banner
-      playChime();
+      if (isLevelUp) playTriumph();
+      else playChime();
 
       // Auto-close overlay after a moment
       setTimeout(() => {
         if (modal) modal.classList.add('hidden');
         closeStretch();
-      }, 1800);
+      }, 2000);
     }
 
     function stretchTogglePause() {
@@ -1729,6 +1817,57 @@
     }
     document.getElementById('close-modal').onclick = closeModal;
     unlockBtn.onclick = unlockEditing;
+
+    // Badges overlay
+    const badgesBtn = document.getElementById('badges-btn');
+    const badgesModal = document.getElementById('badges-modal');
+    const badgesBackdrop = document.getElementById('badges-backdrop');
+    const badgesClose = document.getElementById('badges-close');
+    const badgesGrid = document.getElementById('badges-grid');
+
+    function renderBadges() {
+      if (!badgesGrid) return;
+      badgesGrid.innerHTML = '';
+      const { count } = getStretchStreak();
+      const highest = Math.max(getHighestUnlockedLevel(), count);
+      for (const m of milestoneMap) {
+        const unlocked = highest >= m.days;
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `text-left w-full rounded-2xl border p-4 shadow-sm transition active:scale-[0.99] ${unlocked ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-200 opacity-70'}`;
+        card.style.minHeight = '88px';
+        card.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="text-3xl">${unlocked ? m.icon : '☁️'}</div>
+            <div>
+              <div class="text-sm font-extrabold text-slate-800">${m.days} Days — ${m.title}</div>
+              <div class="mt-1 text-xs font-bold text-slate-600">${unlocked ? m.science : 'Locked — keep going!'}</div>
+            </div>
+          </div>
+        `;
+        card.onclick = () => {
+          if (unlocked) {
+            alert(`Science Power-Up:\n${m.science}`);
+          } else {
+            alert(`Locked. Reach ${m.days} day streak to unlock!`);
+          }
+        };
+        badgesGrid.appendChild(card);
+      }
+    }
+
+    function openBadges() {
+      renderBadges();
+      badgesModal?.classList.remove('hidden');
+    }
+
+    function closeBadges() {
+      badgesModal?.classList.add('hidden');
+    }
+
+    if (badgesBtn) badgesBtn.onclick = openBadges;
+    if (badgesBackdrop) badgesBackdrop.onclick = closeBadges;
+    if (badgesClose) badgesClose.onclick = closeBadges;
 
     // Stretching timer wiring
     const startStretchesBtn = document.getElementById('start-stretches');

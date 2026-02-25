@@ -472,6 +472,11 @@
             if (currentUserFilter === 'ALL') return true;
             const s2 = (line || '').toLowerCase();
 
+            // Never show climbing-related lines on Shi Qi / Winson filters.
+            if ((currentUserFilter === 'shiqi' || currentUserFilter === 'winson') && s2.includes('climbing')) {
+              return false;
+            }
+
             // Heuristic per-line filtering for shared-day docs:
             // Tue time is Asher-only
             if (s2.includes('climbing class 15:30') || s2.includes('climbing class 15.30')) {
@@ -483,6 +488,11 @@
             }
             if (s2.includes('climbing class 09:00–10:30') || s2.includes('climbing class 09:00-10:30')) {
               return currentUserFilter === 'asher';
+            }
+
+            // Also hide "No climbing class" for anyone besides the climbers.
+            if (s2.includes('no climbing class')) {
+              return currentUserFilter === 'jovan' || currentUserFilter === 'asher';
             }
 
             return true;

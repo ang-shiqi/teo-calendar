@@ -597,13 +597,7 @@
       }
 
       if (kind === 'warrior') {
-        return base(`
-          <circle cx="92" cy="70" r="4" fill="#334155"/>
-          <circle cx="120" cy="70" r="4" fill="#334155"/>
-          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M78 92 h20 v12 a8 8 0 0 1-8 8 h-4 a8 8 0 0 1-8-8z" fill="#a78bfa" stroke="#6d28d9" stroke-width="4"/>
-          <path d="M108 92 h20 v12 a8 8 0 0 1-8 8 h-4 a8 8 0 0 1-8-8z" fill="#a78bfa" stroke="#6d28d9" stroke-width="4"/>
-        `);
+        return `<img src="/assets/clouds/warrior.png" alt="Warrior Cloud" class="w-full h-full object-contain" />`;
       }
 
       if (kind === 'sender') {

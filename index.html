@@ -945,19 +945,7 @@
         });
 
         if (sortedItems.length > 0) {
-          // Stickers (scrapbook overlays)
-          function firstMatch(pred) {
-            return sortedItems.find((it) => pred((it?.text || '').toLowerCase()));
-          }
-
-          // Stickers: SUPER EXAM
-          const hasExam = !!firstMatch((s) => s.includes('exam') || s.includes('psle') || s.includes('wa'));
-          if (hasExam) {
-            const st = document.createElement('div');
-            st.className = 'sticker sticker-exam';
-            st.textContent = 'SUPER EXAM!';
-            cell.appendChild(st);
-          }
+          // (stickers removed)
 
           // Render separate chips so different items can keep their own colors
           const isMobile = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;

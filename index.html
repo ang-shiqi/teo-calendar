@@ -208,18 +208,19 @@
     /* Date-specific sticker */
     .date-sticker {
       position: absolute;
-      left: -10px;
-      right: -10px;
+      left: -26px;
+      right: -26px;
       bottom: 4px;
-      height: 110px;
+      /* Let height be proportional to image (driven by width) */
       pointer-events: none;
       z-index: 3;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
     }
     .date-sticker img {
-      max-height: 100%;
+      width: 100%;
+      height: auto;
       max-width: 100%;
       object-fit: contain;
       filter: drop-shadow(0 10px 12px rgba(15,23,42,0.18));

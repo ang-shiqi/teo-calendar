@@ -468,8 +468,29 @@
             return 'bg-indigo-50 text-slate-600 border-indigo-400';
           }
 
+          function lineVisibleForFilter(line) {
+            if (currentUserFilter === 'ALL') return true;
+            const s2 = (line || '').toLowerCase();
+
+            // Heuristic per-line filtering for shared-day docs:
+            // Tue time is Asher-only
+            if (s2.includes('climbing class 15:30') || s2.includes('climbing class 15.30')) {
+              return currentUserFilter === 'asher';
+            }
+            // Sat: Jovan vs Asher have different durations
+            if (s2.includes('climbing class 09:00–11:30') || s2.includes('climbing class 09:00-11:30')) {
+              return currentUserFilter === 'jovan';
+            }
+            if (s2.includes('climbing class 09:00–10:30') || s2.includes('climbing class 09:00-10:30')) {
+              return currentUserFilter === 'asher';
+            }
+
+            return true;
+          }
+
           const maxChips = (viewMode === 'week') ? 10 : 6;
-          const toShow = lines.slice(0, maxChips);
+          const filteredLines = lines.filter(lineVisibleForFilter);
+          const toShow = filteredLines.slice(0, maxChips);
 
           const stack = document.createElement('div');
           stack.className = 'flex flex-col gap-1';
@@ -482,10 +503,10 @@
             stack.appendChild(chip);
           });
 
-          if (lines.length > maxChips) {
+          if (filteredLines.length > maxChips) {
             const more = document.createElement('div');
             more.className = 'text-[10px] text-slate-400';
-            more.textContent = `+${lines.length - maxChips} more`;
+            more.textContent = `+${filteredLines.length - maxChips} more`;
             stack.appendChild(more);
           }
 

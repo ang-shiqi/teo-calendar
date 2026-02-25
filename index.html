@@ -637,9 +637,12 @@
     function setupRealtimeSync() {
       const { startKey, endKey, rangeKey, cacheMonthKey } = rangeForCurrentView();
 
-      if (rangeKey !== lastRangeKey) {
-        setStatus('loading', 'Syncing…');
+      // If we're already listening to this exact range, don't resubscribe.
+      if (rangeKey === lastRangeKey && typeof unsubscribeSync === 'function') {
+        return;
       }
+
+      setStatus('loading', 'Syncing…');
 
       // Month cache: render immediately from cache (if any)
       if (cacheMonthKey) {
@@ -767,9 +770,6 @@
       }
 
       lucide.createIcons();
-
-      // Sync only the visible range (debounced) to reduce Firestore reads.
-      scheduleSync();
     }
 
     function startOfWeek(date) {

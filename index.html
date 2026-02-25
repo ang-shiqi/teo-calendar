@@ -193,6 +193,25 @@
       opacity: 0.98;
     }
 
+    /* Background illustration inside a date cell */
+    .cell-bg-ill {
+      position: absolute;
+      left: 6px;
+      right: 6px;
+      top: 34px;
+      bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.50;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .cell-foreground {
+      position: relative;
+      z-index: 2;
+    }
+
     .kawaii-cloud {
       position: absolute;
       top: -18px;
@@ -1032,8 +1051,67 @@
           const maxChips = (viewMode === 'week') ? 10 : 6;
           const toShow = sortedItems.slice(0, maxChips);
 
+          // Background illustration (50% opacity)
+          function bgIllustrationSvg(kind) {
+            if (kind === 'climbing') {
+              return `
+                <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="mtnbg" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0" stop-color="#dbeafe"/>
+                      <stop offset="1" stop-color="#bfdbfe"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M10 110 L80 20 L120 70 L150 45 L190 110 Z" fill="url(#mtnbg)" stroke="#94a3b8" stroke-width="3"/>
+                  <circle cx="120" cy="58" r="10" fill="#fca5a5"/>
+                  <path d="M112 68 Q120 75 128 68" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M112 75 L100 90" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M128 75 L140 90" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M120 80 L120 98" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                </svg>`;
+            }
+            if (kind === 'revision') {
+              return `
+                <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+                  <rect x="60" y="65" width="90" height="20" rx="10" fill="#fef08a" stroke="#a16207" stroke-width="3"/>
+                  <rect x="55" y="45" width="95" height="20" rx="10" fill="#c7d2fe" stroke="#4338ca" stroke-width="3"/>
+                  <rect x="50" y="25" width="100" height="20" rx="10" fill="#bbf7d0" stroke="#15803d" stroke-width="3"/>
+                  <circle cx="90" cy="35" r="8" fill="#fff" stroke="#7c3aed" stroke-width="3"/>
+                  <circle cx="120" cy="35" r="8" fill="#fff" stroke="#7c3aed" stroke-width="3"/>
+                  <path d="M98 35 H112" stroke="#7c3aed" stroke-width="3" stroke-linecap="round"/>
+                  <path d="M100 44 Q105 48 110 44" stroke="#7c3aed" stroke-width="3" fill="none" stroke-linecap="round"/>
+                </svg>`;
+            }
+            if (kind === 'swimming') {
+              return `
+                <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
+                  <path d="M0 90 Q25 75 50 90 T100 90 T150 90 T200 90 V120 H0 Z" fill="#93c5fd"/>
+                  <path d="M0 98 Q25 83 50 98 T100 98 T150 98 T200 98" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round"/>
+                  <circle cx="110" cy="60" r="22" fill="#fde68a" stroke="#a16207" stroke-width="3"/>
+                  <circle cx="125" cy="54" r="12" fill="#fde68a" stroke="#a16207" stroke-width="3"/>
+                  <circle cx="128" cy="52" r="3" fill="#111827"/>
+                  <path d="M120 60 Q126 64 132 60" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M136 55 L150 60 L136 65 Z" fill="#fb7185"/>
+                </svg>`;
+            }
+            return '';
+          }
+
+          const sAll = sortedItems.map((it) => (it.text || '').toLowerCase()).join('\n');
+          let bgKind = null;
+          if (sAll.includes('climbing')) bgKind = 'climbing';
+          else if (sAll.includes('revision time')) bgKind = 'revision';
+          else if (sAll.includes('swimming')) bgKind = 'swimming';
+
+          if (bgKind) {
+            const bg = document.createElement('div');
+            bg.className = 'cell-bg-ill';
+            bg.innerHTML = bgIllustrationSvg(bgKind);
+            cell.appendChild(bg);
+          }
+
           const stack = document.createElement('div');
-          stack.className = 'flex flex-col gap-1';
+          stack.className = 'cell-foreground flex flex-col gap-1';
 
           toShow.forEach((item) => {
             const chip = document.createElement('div');

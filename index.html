@@ -44,19 +44,14 @@
       background: var(--paper);
       border: 1px solid rgba(15, 23, 42, 0.10);
       box-shadow: 0 22px 55px rgba(15, 23, 42, 0.22);
-      transform: rotate(-1.0deg);
+      transform: none;
 
-      /* uneven paper edges */
-      clip-path: polygon(
-        1% 2%, 6% 1%, 14% 2%, 22% 1%, 31% 2%, 40% 1%, 49% 2%, 58% 1%, 68% 2%, 77% 1%, 86% 2%, 94% 1%, 99% 2%,
-        99% 10%, 98% 18%, 99% 27%, 98% 35%, 99% 44%, 98% 53%, 99% 62%, 98% 71%, 99% 80%, 98% 89%, 99% 98%,
-        92% 99%, 84% 98%, 76% 99%, 68% 98%, 60% 99%, 52% 98%, 44% 99%, 36% 98%, 28% 99%, 20% 98%, 12% 99%, 4% 98%,
-        1% 96%, 2% 88%, 1% 79%, 2% 71%, 1% 62%, 2% 54%, 1% 45%, 2% 37%, 1% 28%, 2% 20%, 1% 12%
-      );
+      /* Keep paper straight (no cut edge) */
+      border-radius: 22px;
     }
 
     .scrapbook-paper > .paper-inner {
-      transform: rotate(1.0deg);
+      transform: none;
       padding-top: 60px; /* header safe zone */
     }
 
@@ -1054,20 +1049,30 @@
           // Background illustration (50% opacity)
           function bgIllustrationSvg(kind) {
             if (kind === 'climbing') {
+              // Rock wall + climber
               return `
                 <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
                   <defs>
-                    <linearGradient id="mtnbg" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0" stop-color="#dbeafe"/>
-                      <stop offset="1" stop-color="#bfdbfe"/>
+                    <linearGradient id="wall" x1="0" x2="1" y1="0" y2="1">
+                      <stop offset="0" stop-color="#e2e8f0"/>
+                      <stop offset="1" stop-color="#cbd5e1"/>
                     </linearGradient>
                   </defs>
-                  <path d="M10 110 L80 20 L120 70 L150 45 L190 110 Z" fill="url(#mtnbg)" stroke="#94a3b8" stroke-width="3"/>
-                  <circle cx="120" cy="58" r="10" fill="#fca5a5"/>
-                  <path d="M112 68 Q120 75 128 68" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
-                  <path d="M112 75 L100 90" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
-                  <path d="M128 75 L140 90" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
-                  <path d="M120 80 L120 98" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <rect x="30" y="10" width="140" height="100" rx="14" fill="url(#wall)" stroke="#94a3b8" stroke-width="3"/>
+                  <circle cx="70" cy="40" r="6" fill="#fb7185"/>
+                  <circle cx="110" cy="30" r="6" fill="#60a5fa"/>
+                  <circle cx="130" cy="60" r="6" fill="#34d399"/>
+                  <circle cx="90" cy="70" r="6" fill="#fbbf24"/>
+
+                  <circle cx="115" cy="55" r="9" fill="#fca5a5"/>
+                  <path d="M110 64 Q115 70 120 64" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M115 64 L115 85" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M115 72 L103 80" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M115 72 L128 78" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M115 85 L106 100" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+                  <path d="M115 85 L125 100" stroke="#111827" stroke-width="4" stroke-linecap="round"/>
+
+                  <path d="M40 110 H160" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
                 </svg>`;
             }
             if (kind === 'revision') {
@@ -1083,15 +1088,21 @@
                 </svg>`;
             }
             if (kind === 'swimming') {
+              // Boy swimming in a pool
               return `
                 <svg viewBox="0 0 200 120" class="w-full h-full" aria-hidden="true">
-                  <path d="M0 90 Q25 75 50 90 T100 90 T150 90 T200 90 V120 H0 Z" fill="#93c5fd"/>
-                  <path d="M0 98 Q25 83 50 98 T100 98 T150 98 T200 98" fill="none" stroke="#60a5fa" stroke-width="6" stroke-linecap="round"/>
-                  <circle cx="110" cy="60" r="22" fill="#fde68a" stroke="#a16207" stroke-width="3"/>
-                  <circle cx="125" cy="54" r="12" fill="#fde68a" stroke="#a16207" stroke-width="3"/>
-                  <circle cx="128" cy="52" r="3" fill="#111827"/>
-                  <path d="M120 60 Q126 64 132 60" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
-                  <path d="M136 55 L150 60 L136 65 Z" fill="#fb7185"/>
+                  <rect x="0" y="0" width="200" height="120" rx="16" fill="#e0f2fe" opacity="0.9"/>
+                  <path d="M0 78 Q25 68 50 78 T100 78 T150 78 T200 78 V120 H0 Z" fill="#60a5fa" opacity="0.85"/>
+                  <path d="M0 88 Q25 78 50 88 T100 88 T150 88 T200 88" fill="none" stroke="#3b82f6" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+
+                  <circle cx="95" cy="54" r="10" fill="#fca5a5"/>
+                  <circle cx="92" cy="52" r="2" fill="#111827"/>
+                  <path d="M90 58 Q95 62 100 58" stroke="#111827" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <path d="M100 60 Q112 58 118 52" stroke="#111827" stroke-width="4" fill="none" stroke-linecap="round"/>
+                  <path d="M84 66 Q95 60 106 66" stroke="#111827" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.85"/>
+
+                  <circle cx="128" cy="62" r="4" fill="#ffffff" opacity="0.8"/>
+                  <circle cx="135" cy="70" r="3" fill="#ffffff" opacity="0.8"/>
                 </svg>`;
             }
             return '';

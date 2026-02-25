@@ -557,6 +557,7 @@
             const isLeadClass = s.includes('lead class');
             const isChineseTuition = s.includes('chinese tuition');
             const isEnglishTuition = s.includes('english tuition');
+            const isRevisionTime = s.includes('revision time');
             const isExam = s.includes('psle') || s.includes('weighted assessment') || /\bwa\d*\b/i.test(line) || s.includes('eoy') || s.includes('exam');
             const isBirthday = s.includes('birthday');
             const isSchool = s.includes('school holiday') || s.includes('school vacation') || s.includes('school day off');
@@ -577,6 +578,7 @@
             if (isLeadClass) return 'bg-green-800 text-white border-green-950';
             if (isChineseTuition) return 'bg-[#edb887] text-slate-900 border-[#caa06e]';
             if (isEnglishTuition) return 'bg-amber-200 text-amber-950 border-amber-400';
+            if (isRevisionTime) return 'bg-violet-100 text-violet-950 border-violet-400';
             if (isSkating) return 'bg-teal-100 text-teal-950 border-teal-500';
             if (isSpelling) return 'bg-purple-200 text-purple-950 border-purple-700';
             if (isExam) return 'bg-purple-200 text-purple-950 border-purple-700';

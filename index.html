@@ -363,9 +363,9 @@
       // Week view: make cells taller and avoid per-cell scrolling (show +more instead)
       if (viewMode === 'week') {
         calendarGrid.classList.remove('auto-rows-[150px]', 'sm:auto-rows-[220px]');
-        calendarGrid.classList.add('auto-rows-[200px]', 'sm:auto-rows-[240px]');
+        calendarGrid.classList.add('auto-rows-[300px]', 'sm:auto-rows-[400px]');
       } else {
-        calendarGrid.classList.remove('auto-rows-[200px]', 'sm:auto-rows-[240px]');
+        calendarGrid.classList.remove('auto-rows-[300px]', 'sm:auto-rows-[400px]');
         calendarGrid.classList.add('auto-rows-[150px]', 'sm:auto-rows-[220px]');
       }
 
@@ -475,7 +475,7 @@
 
     function createDayCell(day, isFaded, dateKey, isToday) {
       const cell = document.createElement('div');
-      const overflowClass = (viewMode === 'week') ? 'overflow-hidden' : 'overflow-auto no-scrollbar';
+      const overflowClass = (viewMode === 'week') ? 'overflow-auto no-scrollbar' : 'overflow-auto no-scrollbar';
       cell.className = `bg-white p-1 sm:p-2 flex flex-col group relative border-none ${overflowClass} ${isFaded ? 'text-slate-300' : 'text-slate-700 cursor-pointer hover:bg-indigo-50/50'}`;
 
       const num = document.createElement('span');

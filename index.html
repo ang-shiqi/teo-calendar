@@ -609,13 +609,7 @@
       }
 
       if (kind === 'mountain') {
-        return base(`
-          <circle cx="92" cy="70" r="4" fill="#334155"/>
-          <circle cx="120" cy="70" r="4" fill="#334155"/>
-          <path d="M96 80 Q105 88 114 80" stroke="#334155" stroke-width="5" fill="none" stroke-linecap="round"/>
-          <path d="M70 108 L100 70 L130 108 Z" fill="#cbd5e1" stroke="#64748b" stroke-width="5"/>
-          <path d="M93 85 L100 70 L107 85" fill="#fff" opacity="0.9"/>
-        `);
+        return `<img src="/assets/clouds/mountain.png" alt="Mountain Cloud" class="w-full h-full object-contain" />`;
       }
 
       if (kind === 'cape') {

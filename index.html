@@ -897,7 +897,9 @@
 
     function createDayCell(day, isFaded, dateKey, isToday) {
       const cell = document.createElement('div');
-      const overflowClass = (viewMode === 'week') ? 'overflow-auto no-scrollbar' : 'overflow-auto no-scrollbar';
+      const isStickerDay = dateKey === '2026-09-29';
+      // Allow sticker to spill over neighboring cells (month view) by not clipping overflow.
+      const overflowClass = (viewMode === 'month' && isStickerDay) ? 'overflow-visible' : 'overflow-auto no-scrollbar';
       cell.className = `bg-white p-1 sm:p-2 flex flex-col group relative border-none ${overflowClass} ${isFaded ? 'text-slate-300' : 'text-slate-700 cursor-pointer hover:bg-indigo-50/50'}`;
 
       const num = document.createElement('span');
@@ -922,6 +924,8 @@
       if (dateKey === '2026-09-29') {
         const st = document.createElement('div');
         st.className = 'date-sticker';
+        // Ensure sticker renders above neighboring cells
+        cell.style.zIndex = '20';
         const img = document.createElement('img');
         img.src = '/assets/stickers/jovan-free.png';
         img.alt = 'Jovan is free!';

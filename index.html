@@ -537,7 +537,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, documentId, runTransaction, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, documentId, runTransaction, getDoc, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
     const firebaseConfig = window.FIREBASE_CONFIG;
     if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('PASTE')) {
@@ -566,7 +566,7 @@
     const STRETCH_DONE_KEY = `teo-calendar:${APP_ID}:stretchDone:jovan`;
     const STRETCH_STREAK_KEY = `teo-calendar:${APP_ID}:stretchStreak:jovan`;
     const STRETCH_HIGHEST_KEY = `teo-calendar:${APP_ID}:stretchHighestLevel:jovan`;
-    let stretchRemote = { doneDate: null, lastDone: null, streakCount: 0, loaded: false };
+    let stretchRemote = { streakCount: 0, lastCompletedDate: null, highestUnlockedLevel: null, loaded: false };
 
     const milestoneMap = [
       { days: 3, key: 'misty', title: 'Getting Misty', icon: '☁️😊', science: 'Brain Shortcut — Your brain now remembers the moves easily.' },
@@ -761,12 +761,12 @@
       if (user) {
         // Subscribe to shared stretch status (synced across devices)
         try {
-          onSnapshot(stretchDocRef(), (snap) => {
+          onSnapshot(userDocRef(), (snap) => {
             const d = snap.exists() ? (snap.data() || {}) : {};
             stretchRemote = {
-              doneDate: (typeof d.doneDate === 'string') ? d.doneDate : null,
-              lastDone: (typeof d.lastDone === 'string') ? d.lastDone : null,
               streakCount: Number(d.streakCount) || 0,
+              lastCompletedDate: d.lastCompletedDate || null,
+              highestUnlockedLevel: (typeof d.highestUnlockedLevel === 'string') ? d.highestUnlockedLevel : null,
               loaded: true,
             };
             updateJovanFooter();
@@ -957,8 +957,11 @@
 
     function isStretchDoneToday() {
       const today = todayKeySGT();
-      if (stretchRemote.loaded && stretchRemote.doneDate) {
-        return stretchRemote.doneDate === today;
+      if (stretchRemote.loaded && stretchRemote.lastCompletedDate) {
+        const d = stretchRemote.lastCompletedDate;
+        const dt = (d instanceof Timestamp) ? d.toDate() : new Date(d);
+        const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' });
+        return fmt.format(dt) === today;
       }
       // fallback (device-local)
       try {
@@ -978,7 +981,9 @@
 
     function getStretchStreak() {
       if (stretchRemote.loaded) {
-        return { count: Number(stretchRemote.streakCount) || 0, lastDone: stretchRemote.lastDone || null };
+        const last = stretchRemote.lastCompletedDate;
+        const lastIso = last ? ((last instanceof Timestamp) ? last.toDate().toISOString() : String(last)) : null;
+        return { count: Number(stretchRemote.streakCount) || 0, lastDone: lastIso };
       }
       try {
         const raw = localStorage.getItem(STRETCH_STREAK_KEY);
@@ -996,41 +1001,69 @@
       } catch (_) {}
     }
 
-    function stretchDocRef() {
-      return doc(db, 'artifacts', APP_ID, 'public', 'data', 'stretches', 'jovan');
+    function userDocRef() {
+      // Requested structure: users/jovan
+      return doc(db, 'users', 'jovan');
+    }
+
+    function highestLevelKeyFromStreak(streak) {
+      const ms = currentMilestone(streak);
+      return ms?.key || null;
     }
 
     async function markStretchDoneTodayPublic() {
-      const ref = stretchDocRef();
-      const today = todayKeySGT();
-      const yday = ydayKeySGT();
+      const ref = userDocRef();
 
-      // Best-effort local fallback write (for immediate UI even if rules block)
-      try { localStorage.setItem(STRETCH_DONE_KEY, today); } catch (_) {}
+      // Best-effort local fallback write (for immediate UI even if remote write fails)
+      try { localStorage.setItem(STRETCH_DONE_KEY, todayKeySGT()); } catch (_) {}
 
-      // Transaction so streak increments safely
+      const now = new Date();
       const res = await runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         const data = snap.exists() ? (snap.data() || {}) : {};
-        const lastDone = (typeof data.lastDone === 'string') ? data.lastDone : null;
-        const streakCount = Number(data.streakCount) || 0;
 
-        let next = 1;
-        if (lastDone === today) next = Math.max(1, streakCount);
-        else if (lastDone === yday) next = Math.max(1, streakCount) + 1;
+        const last = data.lastCompletedDate;
+        const lastDate = (last instanceof Timestamp) ? last.toDate() : (last ? new Date(last) : null);
+        const prevStreak = Number(data.streakCount) || 0;
+
+        let nextStreak = 1;
+        if (lastDate) {
+          const diffMs = now.getTime() - lastDate.getTime();
+          const diffHours = diffMs / (1000 * 60 * 60);
+
+          // consecutive day check in SGT
+          const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit' });
+          const lastKey = fmt.format(lastDate);
+          const todayKey = fmt.format(now);
+          const yKey = fmt.format(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+
+          if (lastKey === todayKey) {
+            nextStreak = Math.max(1, prevStreak);
+          } else if (lastKey === yKey) {
+            nextStreak = Math.max(1, prevStreak) + 1;
+          } else if (diffHours > 48) {
+            nextStreak = 1;
+          } else {
+            // Non-consecutive but within 48h: treat as reset
+            nextStreak = 1;
+          }
+        }
+
+        const prevHighest = (typeof data.highestUnlockedLevel === 'string') ? data.highestUnlockedLevel : null;
+        const nextHighestKey = highestLevelKeyFromStreak(nextStreak);
 
         tx.set(ref, {
-          doneDate: today,
-          lastDone: today,
-          streakCount: next,
-          updatedAt: new Date().toISOString(),
+          streakCount: nextStreak,
+          lastCompletedDate: serverTimestamp(),
+          highestUnlockedLevel: nextHighestKey || prevHighest || 'none',
         }, { merge: true });
 
-        return { nextStreak: next, lastDone: today, doneDate: today };
+        return { nextStreak, nextHighestKey: nextHighestKey || prevHighest || 'none' };
       });
 
-      // Update in-memory state
-      stretchRemote = { doneDate: res.doneDate, lastDone: res.lastDone, streakCount: res.nextStreak, loaded: true };
+      // Update in-memory state (best-effort; serverTimestamp resolves on next snapshot)
+      stretchRemote.streakCount = res.nextStreak;
+      stretchRemote.highestUnlockedLevel = res.nextHighestKey;
       return res.nextStreak;
     }
 

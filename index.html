@@ -1629,6 +1629,18 @@
             if (!best || idx < best.idx) best = { idx, mins };
           }
 
+          // 12h (no minutes): 2pm / 11 am
+          const r12h = /\b(\d{1,2})\s*(am|pm)\b/gi;
+          for (const m of s.matchAll(r12h)) {
+            let h = Number(m[1]);
+            const ap = String(m[2]).toLowerCase();
+            if (h === 12) h = 0;
+            let h24 = h + (ap === 'pm' ? 12 : 0);
+            const mins = h24 * 60;
+            const idx = m.index ?? 1e9;
+            if (!best || idx < best.idx) best = { idx, mins };
+          }
+
           return best ? best.mins : null;
         }
 

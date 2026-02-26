@@ -1695,18 +1695,19 @@
             const isChineseTuition = s.includes('chinese tuition');
             const isEnglishTuition = s.includes('english tuition');
             const isRevisionTime = s.includes('revision time');
+            const isSpeedTraining = s.includes('speed training');
             const isCCA = s.includes('cca');
             const isExam = s.includes('psle') || s.includes('weighted assessment') || /\bwa\d*\b/i.test(line) || s.includes('eoy') || s.includes('exam');
             const isBirthday = s.includes('birthday');
             const isSchool = s.includes('school holiday') || s.includes('school vacation') || s.includes('school day off');
             const isNoClimbing = s === 'no climbing class' || s.includes('no climbing class');
             // Any climbing-related training/notes should be light green
-            const isClimbing = !isNoClimbing && (
+            // (Except Speed Training which has its own lime-green color.)
+            const isClimbing = !isNoClimbing && !isSpeedTraining && (
               s.includes('climbing')
               || s.includes('bouldering')
               || s.includes('lead')
               || s.includes('top rope')
-              || s.includes('speed training')
               || s.includes('campus')
             );
 
@@ -1717,6 +1718,7 @@
             if (isChineseTuition) return 'bg-[#fde2c6] text-slate-900 border-[#f3c79f]';
             if (isEnglishTuition) return 'bg-[#fff6bf] text-slate-900 border-[#f2e28c]';
             if (isRevisionTime) return 'bg-violet-50 text-violet-900 border-violet-200';
+            if (isSpeedTraining) return 'bg-lime-100 text-lime-900 border-lime-400';
             if (isCCA) return 'bg-[#d7e3f3] text-slate-900 border-[#9fb7d6]';
             if (isSkating) return 'bg-[#bdefea] text-slate-900 border-[#5ec9c0]';
             if (isSpelling) return 'bg-[#4B0082] text-white border-[#2E004D]';

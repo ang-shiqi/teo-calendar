@@ -1190,7 +1190,30 @@
     let stretchTimer = null;
     let stretchAwaitNext = false;
 
+    // Alarm sound for step completion (replaces old chime)
+    const stepAlarm = (() => {
+      try {
+        const a = new Audio('/assets/sounds/alarm-clock.mp3');
+        a.preload = 'auto';
+        a.volume = 0.9;
+        return a;
+      } catch (_) {
+        return null;
+      }
+    })();
+
     function playChime() {
+      // Back-compat name: now plays an alarm-clock sound.
+      try {
+        if (stepAlarm) {
+          stepAlarm.currentTime = 0;
+          const p = stepAlarm.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback: simple beep
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
@@ -1203,7 +1226,6 @@
         o.connect(g);
         g.connect(ctx.destination);
         o.start();
-        // quick ramp
         g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
         g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
         o.stop(ctx.currentTime + 0.38);

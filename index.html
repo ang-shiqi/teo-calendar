@@ -1711,7 +1711,9 @@
             const isCCA = s.includes('cca');
             const isExam = s.includes('psle') || s.includes('weighted assessment') || /\bwa\d*\b/i.test(line) || s.includes('eoy') || s.includes('exam');
             const isBirthday = s.includes('birthday');
-            const isSchool = s.includes('school holiday') || s.includes('school vacation') || s.includes('school day off');
+            const isSchoolHoliday = s.includes('school holiday') || s.includes('school vacation');
+            const isSchoolDayOff = s.includes('school day off');
+            const isVacation = s.includes('vacation') && !isSchoolHoliday && !isSchoolDayOff;
             const isNoClimbing = s === 'no climbing class' || s.includes('no climbing class');
             // Any climbing-related training/notes should be light green
             // (Except Speed Training which has its own lime-green color.)
@@ -1738,8 +1740,10 @@
             if (isBirthday) return 'bg-pink-50 text-pink-700 border-pink-400';
             if (isNoClimbing) return 'bg-slate-200 text-slate-800 border-slate-400';
             if (isClimbing) return 'bg-[#dff7e9] text-slate-900 border-[#7dd9b0]';
-            // Vacation / School Holiday: vibrant gold
-            if (isSchool) return 'bg-[#FFD700] text-[#4A3B00] border-[#D4AF37]';
+            // Vacation only (e.g. "JB Vacation"): vibrant gold
+            if (isVacation) return 'bg-[#FFD700] text-[#4A3B00] border-[#D4AF37]';
+            // School Holiday / School Day Off: keep the original orange
+            if (isSchoolHoliday || isSchoolDayOff) return 'bg-orange-50 text-orange-700 border-orange-400';
             return 'bg-indigo-50 text-slate-600 border-indigo-400';
           }
 

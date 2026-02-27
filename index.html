@@ -1207,6 +1207,14 @@
       }
     })();
 
+    function stopStepAlarm() {
+      try {
+        if (!stepAlarm) return;
+        stepAlarm.pause();
+        stepAlarm.currentTime = 0;
+      } catch (_) {}
+    }
+
     function playChime() {
       // Back-compat name: now plays an alarm-clock sound.
       try {
@@ -1332,6 +1340,7 @@
       stretchStarted = false;
       stretchPaused = false;
       stretchAwaitNext = false;
+      stopStepAlarm();
       if (stretchTimer) {
         clearInterval(stretchTimer);
         stretchTimer = null;
@@ -1339,6 +1348,7 @@
     }
 
     function stretchNext() {
+      stopStepAlarm();
       if (stretchIdx < STRETCH_STEPS.length - 1) {
         stretchIdx += 1;
         stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
@@ -1350,6 +1360,7 @@
     }
 
     function stretchBack() {
+      stopStepAlarm();
       if (stretchIdx > 0) {
         stretchIdx -= 1;
         stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;
@@ -1361,6 +1372,7 @@
     }
 
     function stretchStartOrRestart() {
+      stopStepAlarm();
       if (!stretchStarted) {
         stretchStarted = true;
         stretchPaused = false;

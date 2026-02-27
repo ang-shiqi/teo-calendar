@@ -1276,7 +1276,12 @@
       if (prog) prog.style.width = `${Math.max(0, Math.min(100, pct))}%`;
 
       if (btnBack) btnBack.disabled = stretchIdx <= 0;
-      if (btnNext) btnNext.disabled = stretchIdx >= STRETCH_STEPS.length - 1;
+      if (btnNext) {
+        const isFinal = stretchIdx >= STRETCH_STEPS.length - 1;
+        // Allow "Finish" on final step after timer hits 0
+        btnNext.disabled = isFinal ? !stretchAwaitNext : (stretchIdx >= STRETCH_STEPS.length - 1);
+        btnNext.textContent = (isFinal && stretchAwaitNext) ? 'Finish' : 'Next';
+      }
       if (btnStart) {
         btnStart.textContent = stretchStarted ? 'Restart' : 'Start';
       }
@@ -1318,13 +1323,10 @@
 
         const isFinal = stretchIdx >= STRETCH_STEPS.length - 1;
         if (isFinal) {
-          // Mark done + show success banner
-          stretchStarted = false;
+          // Final step: require user to press Finish (Next) to show success popup
+          stretchAwaitNext = true;
           stretchPaused = true;
-          stretchAwaitNext = false;
-          markStretchDoneTodayPublic()
-            .then((nextStreak) => showStretchSuccessBanner(nextStreak))
-            .catch(() => showStretchSuccessBanner());
+          renderStretchUI();
         } else {
           stretchAwaitNext = true;
           stretchPaused = true;
@@ -1349,6 +1351,22 @@
 
     function stretchNext() {
       stopStepAlarm();
+
+      const isFinal = stretchIdx >= STRETCH_STEPS.length - 1;
+      if (isFinal) {
+        // Finish flow: mark done + show success popup
+        if (!stretchAwaitNext) return;
+        stretchStarted = false;
+        stretchPaused = true;
+        stretchAwaitNext = false;
+        renderStretchUI();
+        markStretchDoneTodayPublic()
+          .then((nextStreak) => showStretchSuccessBanner(nextStreak))
+          .catch(() => showStretchSuccessBanner());
+        return;
+      }
+
+      // Normal next step
       if (stretchIdx < STRETCH_STEPS.length - 1) {
         stretchIdx += 1;
         stretchRemaining = STRETCH_STEPS[stretchIdx].seconds;

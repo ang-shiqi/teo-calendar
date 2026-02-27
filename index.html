@@ -1398,8 +1398,30 @@
       } catch (_) {}
     }
 
+    // Level-up chime for success popup
+    const levelUpChime = (() => {
+      try {
+        const a = new Audio('/assets/sounds/level-up.mp3');
+        a.preload = 'auto';
+        a.volume = 0.9;
+        return a;
+      } catch (_) {
+        return null;
+      }
+    })();
+
     function playLevelUpChime() {
       // Always play when the success popup appears
+      try {
+        if (levelUpChime) {
+          levelUpChime.currentTime = 0;
+          const p = levelUpChime.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback: simple synth rise
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
@@ -1411,13 +1433,11 @@
         o.connect(g);
         g.connect(ctx.destination);
         o.start();
-
-        // quick 3-note rise
         const t0 = ctx.currentTime;
         g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
-        o.frequency.setValueAtTime(523.25, t0); // C5
-        o.frequency.setValueAtTime(659.25, t0 + 0.11); // E5
-        o.frequency.setValueAtTime(784.0, t0 + 0.22); // G5
+        o.frequency.setValueAtTime(523.25, t0);
+        o.frequency.setValueAtTime(659.25, t0 + 0.11);
+        o.frequency.setValueAtTime(784.0, t0 + 0.22);
         g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
         o.stop(t0 + 0.58);
         o.onended = () => ctx.close().catch(() => {});

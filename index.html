@@ -18,6 +18,8 @@
     /* Global font */
     body { font-family: 'Itim', 'Quicksand', ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji'; }
 
+    .print-only { display: none; }
+
     /* --- Kawaii Scrapbook aesthetic --- */
     :root{
       --paper: #fffdf7;
@@ -283,6 +285,93 @@
       font-size: 14px;
       z-index: 2;
     }
+
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      html, body {
+        width: 100%;
+        min-height: auto;
+        background: #fff !important;
+      }
+      body {
+        display: block !important;
+        padding: 0 !important;
+        color: #0f172a !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .print-only { display: block !important; }
+      .wood-frame,
+      .scrapbook-paper {
+        padding: 0 !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+      }
+      .scrapbook-paper::before,
+      .scrapbook-paper::after,
+      .scrapbook-pin,
+      .kawaii-cloud,
+      .kawaii-sun,
+      #sync-status,
+      #jovan-footer,
+      #event-modal,
+      #stretch-modal,
+      #stretch-success,
+      #badges-modal,
+      button,
+      select,
+      input { display: none !important; }
+      .paper-inner { padding-top: 0 !important; }
+      .paper-inner > .relative {
+        display: block !important;
+        padding: 0 0 8px 0 !important;
+        border: 0 !important;
+        background: #fff !important;
+      }
+      #current-month-year { margin: 0 !important; text-align: center; }
+      .washi-banner { transform: none !important; }
+      .washi-banner svg { width: 100% !important; max-width: 360px !important; height: 54px !important; }
+      #print-summary { display: block !important; text-align: center; padding: 0 0 8px 0 !important; }
+      .calendar-days-header { border: 1px solid #cbd5e1 !important; border-bottom: 0 !important; }
+      #calendar-grid {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        gap: 0 !important;
+        background: #cbd5e1 !important;
+        border-left: 1px solid #cbd5e1 !important;
+        border-top: 1px solid #cbd5e1 !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      #calendar-grid > div {
+        min-height: 94px !important;
+        height: auto !important;
+        overflow: visible !important;
+        border-right: 1px solid #cbd5e1 !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+        padding: 5px !important;
+        background: #fff !important;
+        color: #0f172a !important;
+      }
+      body.print-week #calendar-grid > div { min-height: 150px !important; }
+      .cell-foreground { gap: 3px !important; }
+      .cell-foreground > div {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        border-radius: 6px !important;
+        padding: 2px 5px !important;
+        font-size: 9.5px !important;
+        line-height: 1.2 !important;
+        box-shadow: none !important;
+      }
+      .date-sticker,
+      .cell-bg-ill { display: none !important; }
+    }
   </style>
 </head>
 
@@ -348,6 +437,9 @@
         <button id="badges-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-extrabold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
           Badges
         </button>
+        <button id="print-btn" class="w-full sm:w-auto px-4 py-2 text-sm font-extrabold text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors">
+          Print
+        </button>
         <input id="jump-month" type="month" class="hidden sm:w-auto px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg border border-slate-200" />
 
         <div class="w-full sm:w-auto flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-1 justify-between">
@@ -361,8 +453,10 @@
       </div>
     </div>
 
+    <div id="print-summary" class="print-only px-4 pb-3 text-sm font-bold text-slate-700"></div>
+
     <!-- Days of Week -->
-    <div class="grid grid-cols-7 bg-slate-50 border-b border-slate-200">
+    <div class="grid grid-cols-7 bg-slate-50 border-b border-slate-200 calendar-days-header">
       <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Sun</div>
       <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Mon</div>
       <div class="py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Tue</div>
@@ -667,6 +761,7 @@
     let canEdit = false;
     let viewMode = "month"; // "month" | "week"
     let editingItems = [];
+    let isPrintMode = false;
 
     function loadUiState() {
       try {
@@ -726,6 +821,8 @@
     const clearBtn = document.getElementById('delete-event');
     const jumpBtn = document.getElementById('jump-btn');
     const jumpMonth = document.getElementById('jump-month');
+    const printBtn = document.getElementById('print-btn');
+    const printSummary = document.getElementById('print-summary');
     const USER_IDS = new Set(USERS.map((u) => u.id));
 
     function normalizeUsers(users, fallbackUsers = []) {
@@ -1528,6 +1625,7 @@
     function renderCalendar() {
       calendarGrid.innerHTML = '';
       updateJovanFooter();
+      updatePrintSummary();
 
       // Week view: make cells taller and avoid per-cell scrolling (show +more instead)
       if (viewMode === 'week') {
@@ -1605,6 +1703,39 @@
       const t = document.getElementById('month-ribbon-text');
       if (t) t.textContent = text;
       else currentMonthYear.textContent = text;
+    }
+
+    function userFilterLabel() {
+      if (currentUserFilter === 'ALL') return 'All users';
+      return USERS.find((u) => u.id === currentUserFilter)?.label || currentUserFilter;
+    }
+
+    function updatePrintSummary() {
+      if (!printSummary) return;
+      const viewLabel = viewMode === 'week' ? 'Week view' : 'Month view';
+      printSummary.textContent = `${viewLabel} • ${userFilterLabel()}`;
+    }
+
+    function printCurrentCalendar() {
+      const previousPrintMode = isPrintMode;
+      isPrintMode = true;
+      document.body.classList.toggle('print-week', viewMode === 'week');
+      document.body.classList.toggle('print-month', viewMode === 'month');
+      updatePrintSummary();
+      renderCalendar();
+
+      const restore = () => {
+        isPrintMode = previousPrintMode;
+        document.body.classList.remove('print-week', 'print-month');
+        renderCalendar();
+        window.removeEventListener('afterprint', restore);
+      };
+
+      window.addEventListener('afterprint', restore, { once: true });
+      window.print();
+      setTimeout(() => {
+        if (isPrintMode) restore();
+      }, 1200);
     }
 
     function renderMonth() {
@@ -1848,7 +1979,7 @@
             return 'bg-indigo-50 text-slate-600 border-indigo-400';
           }
 
-          const maxChips = (viewMode === 'week') ? 10 : 6;
+          const maxChips = isPrintMode ? sortedItems.length : ((viewMode === 'week') ? 10 : 6);
           const toShow = sortedItems.slice(0, maxChips);
 
           // (illustrations removed)
@@ -2017,6 +2148,7 @@
       scheduleSync();
     };
     jumpBtn.onclick = jumpTo;
+    if (printBtn) printBtn.onclick = printCurrentCalendar;
 
     if (jumpMonth) {
       jumpMonth.onchange = () => {

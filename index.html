@@ -287,16 +287,18 @@
     }
 
     @media print {
-      @page { size: A4 landscape; margin: 10mm; }
+      @page { size: A4 landscape; margin: 8mm; }
       html, body {
-        width: 100%;
-        min-height: auto;
+        width: auto !important;
+        min-height: auto !important;
         background: #fff !important;
       }
       body {
         display: block !important;
         padding: 0 !important;
+        margin: 0 !important;
         color: #0f172a !important;
+        font-family: 'Quicksand', Arial, sans-serif !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
@@ -304,6 +306,7 @@
       .wood-frame,
       .scrapbook-paper {
         padding: 0 !important;
+        margin: 0 !important;
         border-radius: 0 !important;
         background: #fff !important;
         box-shadow: none !important;
@@ -325,50 +328,96 @@
       button,
       select,
       input { display: none !important; }
-      .paper-inner { padding-top: 0 !important; }
+      .paper-inner {
+        padding-top: 0 !important;
+        overflow: visible !important;
+      }
       .paper-inner > .relative {
         display: block !important;
-        padding: 0 0 8px 0 !important;
+        padding: 0 0 4mm 0 !important;
         border: 0 !important;
         background: #fff !important;
       }
       #current-month-year { margin: 0 !important; text-align: center; }
       .washi-banner { transform: none !important; }
-      .washi-banner svg { width: 100% !important; max-width: 360px !important; height: 54px !important; }
-      #print-summary { display: block !important; text-align: center; padding: 0 0 8px 0 !important; }
-      .calendar-days-header { border: 1px solid #cbd5e1 !important; border-bottom: 0 !important; }
+      .washi-banner svg { width: 100% !important; max-width: 92mm !important; height: 15mm !important; }
+      #print-summary {
+        display: block !important;
+        text-align: center;
+        padding: 0 0 3mm 0 !important;
+        font-size: 10pt !important;
+        line-height: 1.2 !important;
+      }
+      .calendar-days-header {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+        border: 1px solid #94a3b8 !important;
+        border-bottom: 0 !important;
+        background: #f8fafc !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .calendar-days-header > div {
+        padding: 2mm 0 !important;
+        color: #334155 !important;
+        font-size: 8pt !important;
+        font-weight: 800 !important;
+      }
       #calendar-grid {
         display: grid !important;
         grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
         gap: 0 !important;
-        background: #cbd5e1 !important;
-        border-left: 1px solid #cbd5e1 !important;
-        border-top: 1px solid #cbd5e1 !important;
+        background: #94a3b8 !important;
+        border-left: 1px solid #94a3b8 !important;
+        border-top: 1px solid #94a3b8 !important;
         break-inside: avoid;
         page-break-inside: avoid;
       }
+      body.print-month #calendar-grid {
+        grid-template-rows: repeat(6, minmax(0, 1fr)) !important;
+        height: 155mm !important;
+      }
+      body.print-week #calendar-grid {
+        grid-template-rows: minmax(0, 1fr) !important;
+        height: 165mm !important;
+      }
       #calendar-grid > div {
-        min-height: 94px !important;
+        min-height: 0 !important;
         height: auto !important;
-        overflow: visible !important;
-        border-right: 1px solid #cbd5e1 !important;
-        border-bottom: 1px solid #cbd5e1 !important;
-        padding: 5px !important;
+        overflow: hidden !important;
+        border-right: 1px solid #94a3b8 !important;
+        border-bottom: 1px solid #94a3b8 !important;
+        padding: 1.5mm !important;
         background: #fff !important;
         color: #0f172a !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
       }
-      body.print-week #calendar-grid > div { min-height: 150px !important; }
-      .cell-foreground { gap: 3px !important; }
+      body.print-week #calendar-grid > div { padding: 2mm !important; }
+      #calendar-grid > div > span {
+        width: auto !important;
+        height: auto !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin-bottom: 1mm !important;
+        font-size: 8pt !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+      }
+      .cell-foreground { gap: 1mm !important; }
       .cell-foreground > div {
         white-space: normal !important;
-        overflow: visible !important;
+        overflow: hidden !important;
         text-overflow: clip !important;
-        border-radius: 6px !important;
-        padding: 2px 5px !important;
-        font-size: 9.5px !important;
-        line-height: 1.2 !important;
+        border-radius: 2mm !important;
+        padding: 0.8mm 1.2mm !important;
+        font-size: 6.8pt !important;
+        line-height: 1.15 !important;
         box-shadow: none !important;
+        border-width: 1px !important;
       }
+      body.print-week .cell-foreground > div { font-size: 8pt !important; }
       .date-sticker,
       .cell-bg-ill { display: none !important; }
     }
@@ -1716,26 +1765,42 @@
       printSummary.textContent = `${viewLabel} • ${userFilterLabel()}`;
     }
 
-    function printCurrentCalendar() {
-      const previousPrintMode = isPrintMode;
+    function preparePrintCalendar() {
       isPrintMode = true;
       document.body.classList.toggle('print-week', viewMode === 'week');
       document.body.classList.toggle('print-month', viewMode === 'month');
       updatePrintSummary();
       renderCalendar();
+    }
 
-      const restore = () => {
-        isPrintMode = previousPrintMode;
-        document.body.classList.remove('print-week', 'print-month');
-        renderCalendar();
-        window.removeEventListener('afterprint', restore);
+    function restorePrintCalendar() {
+      if (!isPrintMode) return;
+      isPrintMode = false;
+      document.body.classList.remove('print-week', 'print-month');
+      renderCalendar();
+    }
+
+    function printCurrentCalendar() {
+      preparePrintCalendar();
+
+      // Give the browser a paint cycle with the print classes applied before it
+      // snapshots the page for print preview. Avoid a short timeout restore here:
+      // mobile/desktop print previews can remain open longer than a second.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => window.print());
+      });
+    }
+
+    window.addEventListener('beforeprint', preparePrintCalendar);
+    window.addEventListener('afterprint', restorePrintCalendar);
+    if (window.matchMedia) {
+      const printMedia = window.matchMedia('print');
+      const handlePrintMediaChange = (event) => {
+        if (event.matches) preparePrintCalendar();
+        else restorePrintCalendar();
       };
-
-      window.addEventListener('afterprint', restore, { once: true });
-      window.print();
-      setTimeout(() => {
-        if (isPrintMode) restore();
-      }, 1200);
+      if (printMedia.addEventListener) printMedia.addEventListener('change', handlePrintMediaChange);
+      else if (printMedia.addListener) printMedia.addListener(handlePrintMediaChange);
     }
 
     function renderMonth() {
@@ -1979,7 +2044,9 @@
             return 'bg-indigo-50 text-slate-600 border-indigo-400';
           }
 
-          const maxChips = isPrintMode ? sortedItems.length : ((viewMode === 'week') ? 10 : 6);
+          const maxChips = isPrintMode
+            ? ((viewMode === 'week') ? sortedItems.length : 8)
+            : ((viewMode === 'week') ? 10 : 6);
           const toShow = sortedItems.slice(0, maxChips);
 
           // (illustrations removed)

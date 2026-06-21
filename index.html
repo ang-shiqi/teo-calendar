@@ -482,6 +482,24 @@
         font-weight: 700;
         color: #0f172a;
       }
+      .print-agenda-item.public-holiday { background: #fef2f2; color: #b91c1c; border-color: #f87171; }
+      .print-agenda-item.competition { background: #800020; color: #fff; border-color: #3D0010; }
+      .print-agenda-item.swimming { background: #d6ecff; color: #0f172a; border-color: #9cc8ff; }
+      .print-agenda-item.lead-class { background: #dce8d5; color: #0f172a; border-color: #a6b99b; }
+      .print-agenda-item.chinese-tuition { background: #fde2c6; color: #0f172a; border-color: #f3c79f; }
+      .print-agenda-item.english-tuition { background: #fff6bf; color: #0f172a; border-color: #f2e28c; }
+      .print-agenda-item.revision-time { background: #f5f3ff; color: #4c1d95; border-color: #ddd6fe; }
+      .print-agenda-item.speed-training { background: #ecfccb; color: #365314; border-color: #a3e635; }
+      .print-agenda-item.cca { background: #d7e3f3; color: #0f172a; border-color: #9fb7d6; }
+      .print-agenda-item.skating { background: #bdefea; color: #0f172a; border-color: #5ec9c0; }
+      .print-agenda-item.spelling,
+      .print-agenda-item.exam { background: #4B0082; color: #fff; border-color: #2E004D; }
+      .print-agenda-item.birthday { background: #fdf2f8; color: #be185d; border-color: #f472b6; }
+      .print-agenda-item.no-climbing { background: #e2e8f0; color: #1e293b; border-color: #94a3b8; }
+      .print-agenda-item.climbing { background: #dff7e9; color: #0f172a; border-color: #7dd9b0; }
+      .print-agenda-item.vacation { background: #FFD700; color: #4A3B00; border-color: #D4AF37; }
+      .print-agenda-item.school-holiday { background: #fff7ed; color: #c2410c; border-color: #fb923c; }
+      .print-agenda-item.default-event { background: #eef2ff; color: #475569; border-color: #818cf8; }
       .print-agenda-empty {
         padding: 2.5mm 3mm;
         font-size: 9pt;
@@ -1902,6 +1920,53 @@
       return '';
     }
 
+    function agendaClassForLine(line) {
+      const s = (line || '').toLowerCase();
+      const isPublicHoliday = s.includes('public holiday');
+      const isCompetition = s.includes('competition');
+      const isSpelling = s.includes('spelling');
+      const isSkating = s.includes('skating');
+      const isSwimming = s.includes('swimming');
+      const isLeadClass = s.includes('lead class');
+      const isChineseTuition = s.includes('chinese tuition');
+      const isEnglishTuition = s.includes('english tuition');
+      const isRevisionTime = s.includes('revision time');
+      const isSpeedTraining = s.includes('speed training');
+      const isCCA = s.includes('cca');
+      const isExam = s.includes('psle') || s.includes('weighted assessment') || /\bwa\d*\b/i.test(line) || s.includes('eoy') || s.includes('exam');
+      const isBirthday = s.includes('birthday');
+      const isSchoolHoliday = s.includes('school holiday') || s.includes('school vacation');
+      const isSchoolDayOff = s.includes('school day off');
+      const isVacation = s.includes('vacation') && !isSchoolHoliday && !isSchoolDayOff;
+      const isNoClimbing = s === 'no climbing class' || s.includes('no climbing class');
+      const isClimbing = !isNoClimbing && !isSpeedTraining && (
+        s.includes('climbing')
+        || s.includes('bouldering')
+        || s.includes('lead')
+        || s.includes('top rope')
+        || s.includes('campus')
+      );
+
+      if (isPublicHoliday) return 'public-holiday';
+      if (isCompetition) return 'competition';
+      if (isSwimming) return 'swimming';
+      if (isLeadClass) return 'lead-class';
+      if (isChineseTuition) return 'chinese-tuition';
+      if (isEnglishTuition) return 'english-tuition';
+      if (isRevisionTime) return 'revision-time';
+      if (isSpeedTraining) return 'speed-training';
+      if (isCCA) return 'cca';
+      if (isSkating) return 'skating';
+      if (isSpelling) return 'spelling';
+      if (isExam) return 'exam';
+      if (isBirthday) return 'birthday';
+      if (isNoClimbing) return 'no-climbing';
+      if (isClimbing) return 'climbing';
+      if (isVacation) return 'vacation';
+      if (isSchoolHoliday || isSchoolDayOff) return 'school-holiday';
+      return 'default-event';
+    }
+
     function updatePrintWeekAgenda() {
       if (!printWeekAgenda) return;
       printWeekAgenda.innerHTML = '';
@@ -1947,8 +2012,8 @@
           list.className = 'print-agenda-items';
           sortedItems.forEach((item) => {
             const row = document.createElement('div');
-            row.className = 'print-agenda-item';
             const text = formatTimes12h(item.text || '');
+            row.className = `print-agenda-item ${agendaClassForLine(text)}`;
             const em = agendaEmojiForLine(text);
             row.textContent = em ? `${em} ${text}` : text;
             list.appendChild(row);

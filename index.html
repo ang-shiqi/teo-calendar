@@ -299,9 +299,9 @@
         padding: 0 !important;
         margin: 0 !important;
         color: #0f172a !important;
-        font-family: Arial, Helvetica, sans-serif !important;
-        -webkit-print-color-adjust: economy;
-        print-color-adjust: economy;
+        font-family: 'Quicksand', Arial, sans-serif !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
       body.print-month { page: monthPrint; }
       body.print-week { page: weekPrint; }
@@ -427,33 +427,13 @@
         white-space: normal !important;
         overflow: hidden !important;
         text-overflow: clip !important;
-        border-radius: 0 !important;
-        padding: 0.4mm 1mm 0.4mm 1.4mm !important;
+        border-radius: 1.5mm !important;
+        padding: 0.5mm 1mm !important;
         font-size: 5.8pt !important;
         line-height: 1.08 !important;
         box-shadow: none !important;
-        background: transparent !important;
-        color: #0f172a !important;
-        border: 0 !important;
-        border-left: 1.2mm solid #64748b !important;
+        border-width: 1px !important;
       }
-      .cell-foreground > div[class*="bg-red-50"] { border-left-color: #ef4444 !important; }
-      .cell-foreground > div[class*="bg-[#800020]"] { border-left-color: #800020 !important; }
-      .cell-foreground > div[class*="bg-[#d6ecff]"] { border-left-color: #60a5fa !important; }
-      .cell-foreground > div[class*="bg-[#dce8d5]"] { border-left-color: #84a36f !important; }
-      .cell-foreground > div[class*="bg-[#fde2c6]"] { border-left-color: #fb923c !important; }
-      .cell-foreground > div[class*="bg-[#fff6bf]"] { border-left-color: #eab308 !important; }
-      .cell-foreground > div[class*="bg-violet-50"],
-      .cell-foreground > div[class*="bg-[#4B0082]"] { border-left-color: #6d28d9 !important; }
-      .cell-foreground > div[class*="bg-lime-100"] { border-left-color: #84cc16 !important; }
-      .cell-foreground > div[class*="bg-[#d7e3f3]"] { border-left-color: #3b82f6 !important; }
-      .cell-foreground > div[class*="bg-[#bdefea]"] { border-left-color: #14b8a6 !important; }
-      .cell-foreground > div[class*="bg-pink-50"] { border-left-color: #ec4899 !important; }
-      .cell-foreground > div[class*="bg-slate-200"] { border-left-color: #64748b !important; }
-      .cell-foreground > div[class*="bg-[#dff7e9]"] { border-left-color: #22c55e !important; }
-      .cell-foreground > div[class*="bg-[#FFD700]"] { border-left-color: #d4af37 !important; }
-      .cell-foreground > div[class*="bg-orange-50"] { border-left-color: #f97316 !important; }
-      .cell-foreground > div[class*="bg-indigo-50"] { border-left-color: #6366f1 !important; }
       body.print-week .cell-foreground { gap: 1.4mm !important; }
       body.print-week .cell-foreground > div {
         border-radius: 2mm !important;
@@ -496,34 +476,33 @@
         gap: 1.5mm;
       }
       .print-agenda-item {
-        padding: 1.2mm 2mm 1.2mm 3mm;
-        border: 0;
-        border-left: 1.8mm solid #64748b;
-        border-radius: 0;
-        background: transparent;
+        padding: 1.4mm 2mm;
+        border: 1px solid #cbd5e1;
+        border-radius: 2mm;
+        background: #f8fafc;
         font-size: 9.5pt;
         line-height: 1.22;
         font-weight: 700;
         color: #0f172a;
       }
-      .print-agenda-item.public-holiday { border-left-color: #ef4444; }
-      .print-agenda-item.competition { border-left-color: #800020; }
-      .print-agenda-item.swimming { border-left-color: #60a5fa; }
-      .print-agenda-item.lead-class { border-left-color: #84a36f; }
-      .print-agenda-item.chinese-tuition { border-left-color: #fb923c; }
-      .print-agenda-item.english-tuition { border-left-color: #eab308; }
-      .print-agenda-item.revision-time { border-left-color: #6d28d9; }
-      .print-agenda-item.speed-training { border-left-color: #84cc16; }
-      .print-agenda-item.cca { border-left-color: #3b82f6; }
-      .print-agenda-item.skating { border-left-color: #14b8a6; }
+      .print-agenda-item.public-holiday { background: #fef2f2; color: #b91c1c; border-color: #f87171; }
+      .print-agenda-item.competition { background: #800020; color: #fff; border-color: #3D0010; }
+      .print-agenda-item.swimming { background: #d6ecff; color: #0f172a; border-color: #9cc8ff; }
+      .print-agenda-item.lead-class { background: #dce8d5; color: #0f172a; border-color: #a6b99b; }
+      .print-agenda-item.chinese-tuition { background: #fde2c6; color: #0f172a; border-color: #f3c79f; }
+      .print-agenda-item.english-tuition { background: #fff6bf; color: #0f172a; border-color: #f2e28c; }
+      .print-agenda-item.revision-time { background: #f5f3ff; color: #4c1d95; border-color: #ddd6fe; }
+      .print-agenda-item.speed-training { background: #ecfccb; color: #365314; border-color: #a3e635; }
+      .print-agenda-item.cca { background: #d7e3f3; color: #0f172a; border-color: #9fb7d6; }
+      .print-agenda-item.skating { background: #bdefea; color: #0f172a; border-color: #5ec9c0; }
       .print-agenda-item.spelling,
-      .print-agenda-item.exam { border-left-color: #6d28d9; }
-      .print-agenda-item.birthday { border-left-color: #ec4899; }
-      .print-agenda-item.no-climbing { border-left-color: #64748b; }
-      .print-agenda-item.climbing { border-left-color: #22c55e; }
-      .print-agenda-item.vacation { border-left-color: #d4af37; }
-      .print-agenda-item.school-holiday { border-left-color: #f97316; }
-      .print-agenda-item.default-event { border-left-color: #6366f1; }
+      .print-agenda-item.exam { background: #4B0082; color: #fff; border-color: #2E004D; }
+      .print-agenda-item.birthday { background: #fdf2f8; color: #be185d; border-color: #f472b6; }
+      .print-agenda-item.no-climbing { background: #e2e8f0; color: #1e293b; border-color: #94a3b8; }
+      .print-agenda-item.climbing { background: #dff7e9; color: #0f172a; border-color: #7dd9b0; }
+      .print-agenda-item.vacation { background: #FFD700; color: #4A3B00; border-color: #D4AF37; }
+      .print-agenda-item.school-holiday { background: #fff7ed; color: #c2410c; border-color: #fb923c; }
+      .print-agenda-item.default-event { background: #eef2ff; color: #475569; border-color: #818cf8; }
       .print-agenda-empty {
         padding: 2.5mm 3mm;
         font-size: 9pt;
@@ -2042,7 +2021,8 @@
             const row = document.createElement('div');
             const text = formatTimes12h(item.text || '');
             row.className = `print-agenda-item ${agendaClassForLine(text)}`;
-            row.textContent = text;
+            const em = agendaEmojiForLine(text);
+            row.textContent = em ? `${em} ${text}` : text;
             list.appendChild(row);
           });
           day.appendChild(list);
@@ -2346,7 +2326,7 @@
             const wrapClass = compactMonth ? 'whitespace-nowrap overflow-hidden text-ellipsis truncate' : 'whitespace-normal break-words';
             chip.className = `${chipBase} ${chipClassForLine(item.text)} ${wrapClass}`;
             chip.style.wordBreak = 'break-word';
-            const em = isPrintMode ? '' : emojiForLine(item.text);
+            const em = emojiForLine(item.text);
             const shown = formatTimes12h(item.text);
             chip.textContent = em ? `${em} ${shown}` : shown;
             stack.appendChild(chip);

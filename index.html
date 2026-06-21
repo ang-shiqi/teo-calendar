@@ -388,8 +388,8 @@
         height: 144mm !important;
       }
       body.print-week #calendar-grid {
-        grid-template-rows: 144mm !important;
-        height: 144mm !important;
+        grid-template-rows: 176mm !important;
+        height: 176mm !important;
       }
       #calendar-grid > div {
         min-height: 0 !important;
@@ -404,7 +404,7 @@
         break-inside: auto !important;
         page-break-inside: auto !important;
       }
-      body.print-week #calendar-grid > div { padding: 2mm !important; }
+      body.print-week #calendar-grid > div { padding: 3mm !important; }
       #calendar-grid > div > span {
         width: auto !important;
         height: auto !important;
@@ -414,6 +414,10 @@
         font-size: 7pt !important;
         font-weight: 800 !important;
         color: #0f172a !important;
+      }
+      body.print-week #calendar-grid > div > span {
+        margin-bottom: 2mm !important;
+        font-size: 11pt !important;
       }
       .cell-foreground { gap: 0.6mm !important; }
       .cell-foreground > div {
@@ -427,7 +431,13 @@
         box-shadow: none !important;
         border-width: 1px !important;
       }
-      body.print-week .cell-foreground > div { font-size: 7.5pt !important; }
+      body.print-week .cell-foreground { gap: 1.4mm !important; }
+      body.print-week .cell-foreground > div {
+        border-radius: 2mm !important;
+        padding: 1.2mm 1.6mm !important;
+        font-size: 9.2pt !important;
+        line-height: 1.2 !important;
+      }
       .date-sticker,
       .cell-bg-ill { display: none !important; }
     }

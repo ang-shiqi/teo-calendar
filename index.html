@@ -438,6 +438,53 @@
         font-size: 9.2pt !important;
         line-height: 1.2 !important;
       }
+      body.print-week .calendar-days-header,
+      body.print-week #calendar-grid { display: none !important; }
+      body.print-week #print-week-agenda {
+        display: block !important;
+        column-count: 2;
+        column-gap: 8mm;
+        column-fill: balance;
+      }
+      .print-agenda-day {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin: 0 0 3.5mm 0;
+        border: 1px solid #94a3b8;
+        border-radius: 3mm;
+        overflow: hidden;
+        background: #fff;
+      }
+      .print-agenda-day-title {
+        padding: 1.5mm 2mm;
+        background: #f1f5f9;
+        border-bottom: 1px solid #cbd5e1;
+        font-size: 9pt;
+        font-weight: 900;
+        color: #0f172a;
+      }
+      .print-agenda-items {
+        padding: 1.8mm 2mm;
+        display: flex;
+        flex-direction: column;
+        gap: 1.2mm;
+      }
+      .print-agenda-item {
+        padding: 1.1mm 1.5mm;
+        border: 1px solid #cbd5e1;
+        border-radius: 2mm;
+        background: #f8fafc;
+        font-size: 8pt;
+        line-height: 1.18;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .print-agenda-empty {
+        padding: 2mm;
+        font-size: 8pt;
+        color: #64748b;
+        font-weight: 700;
+      }
       .date-sticker,
       .cell-bg-ill { display: none !important; }
     }
@@ -523,6 +570,7 @@
     </div>
 
     <div id="print-summary" class="print-only px-4 pb-3 text-sm font-bold text-slate-700"></div>
+    <div id="print-week-agenda" class="print-only"></div>
 
     <!-- Days of Week -->
     <div class="grid grid-cols-7 bg-slate-50 border-b border-slate-200 calendar-days-header">
@@ -892,6 +940,7 @@
     const jumpMonth = document.getElementById('jump-month');
     const printBtn = document.getElementById('print-btn');
     const printSummary = document.getElementById('print-summary');
+    const printWeekAgenda = document.getElementById('print-week-agenda');
     const USER_IDS = new Set(USERS.map((u) => u.id));
 
     function normalizeUsers(users, fallbackUsers = []) {
@@ -1711,6 +1760,7 @@
         renderWeek();
       }
 
+      updatePrintWeekAgenda();
       lucide.createIcons();
     }
 
@@ -1784,6 +1834,127 @@
       if (!printSummary) return;
       const viewLabel = viewMode === 'week' ? 'Week view' : 'Month view';
       printSummary.textContent = `${viewLabel} • ${userFilterLabel()}`;
+    }
+
+    function agendaStartMinutes(text) {
+      const s = String(text || '');
+      let best = null;
+
+      const r24 = /\b([01]\d|2[0-3]):([0-5]\d)\b/g;
+      for (const m of s.matchAll(r24)) {
+        const mins = Number(m[1]) * 60 + Number(m[2]);
+        const idx = m.index ?? 1e9;
+        if (!best || idx < best.idx) best = { idx, mins };
+      }
+
+      const r12 = /\b(\d{1,2})[\.:]([0-5]\d)\s*(am|pm)\b/gi;
+      for (const m of s.matchAll(r12)) {
+        let h = Number(m[1]);
+        const minsPart = Number(m[2]);
+        const ap = String(m[3]).toLowerCase();
+        if (h === 12) h = 0;
+        const mins = (h + (ap === 'pm' ? 12 : 0)) * 60 + minsPart;
+        const idx = m.index ?? 1e9;
+        if (!best || idx < best.idx) best = { idx, mins };
+      }
+
+      const r12h = /\b(\d{1,2})\s*(am|pm)\b/gi;
+      for (const m of s.matchAll(r12h)) {
+        let h = Number(m[1]);
+        const ap = String(m[2]).toLowerCase();
+        if (h === 12) h = 0;
+        const mins = (h + (ap === 'pm' ? 12 : 0)) * 60;
+        const idx = m.index ?? 1e9;
+        if (!best || idx < best.idx) best = { idx, mins };
+      }
+
+      return best ? best.mins : null;
+    }
+
+    function formatTimes12h(line) {
+      return (line || '').replace(/\b([01]\d|2[0-3]):([0-5]\d)\b/g, (_, hh, mm) => {
+        const h24 = Number(hh);
+        const suffix = h24 >= 12 ? 'pm' : 'am';
+        let h12 = h24 % 12;
+        if (h12 === 0) h12 = 12;
+        return `${h12}.${mm}${suffix}`;
+      });
+    }
+
+    function agendaEmojiForLine(line) {
+      const s = (line || '').toLowerCase();
+      if (s.includes('climbing') || s.includes('bouldering') || s.includes('top rope') || s.includes('lead') || s.includes('speed training')) return '🧗';
+      if (s.includes('revision time')) return '📖';
+      if (s.includes('science')) return '🧪';
+      if (s.includes('exam') || s.includes('psle') || s.includes('wa')) return '📝';
+      if (s.includes('spelling')) return '🔤';
+      if (s.includes('swimming')) return '🏊';
+      if (s.includes('skating')) return '⛸️';
+      if (s.includes('tuition')) return '📚';
+      if (s.includes('competition')) return '🏆';
+      if (s.includes('birthday')) return '🎂';
+      if (s.includes('public holiday')) return '🎉';
+      if (s.includes('school vacation') || s.includes('school holiday') || s.includes('school day off')) return '🏫';
+      if (s.includes('cca')) return '🎽';
+      return '';
+    }
+
+    function updatePrintWeekAgenda() {
+      if (!printWeekAgenda) return;
+      printWeekAgenda.innerHTML = '';
+      if (viewMode !== 'week') return;
+
+      const start = startOfWeek(currentDate);
+      const dayTitleFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const dateKey = formatDateKey(d);
+        const ev = events[dateKey];
+        const allItems = Array.isArray(ev?.items) ? ev.items : [];
+        const filteredItems = allItems.filter((item) => {
+          if (currentUserFilter === 'ALL') return true;
+          return Array.isArray(item.users) && item.users.includes(currentUserFilter);
+        });
+        const sortedItems = [...filteredItems].sort((a, b) => {
+          const ta = agendaStartMinutes(a?.text);
+          const tb = agendaStartMinutes(b?.text);
+          if (ta == null && tb == null) return 0;
+          if (ta == null) return -1;
+          if (tb == null) return 1;
+          return ta - tb;
+        });
+
+        const day = document.createElement('section');
+        day.className = 'print-agenda-day';
+
+        const title = document.createElement('div');
+        title.className = 'print-agenda-day-title';
+        title.textContent = dayTitleFmt.format(d);
+        day.appendChild(title);
+
+        if (sortedItems.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'print-agenda-empty';
+          empty.textContent = 'No events';
+          day.appendChild(empty);
+        } else {
+          const list = document.createElement('div');
+          list.className = 'print-agenda-items';
+          sortedItems.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'print-agenda-item';
+            const text = formatTimes12h(item.text || '');
+            const em = agendaEmojiForLine(text);
+            row.textContent = em ? `${em} ${text}` : text;
+            list.appendChild(row);
+          });
+          day.appendChild(list);
+        }
+
+        printWeekAgenda.appendChild(day);
+      }
     }
 
     function preparePrintCalendar() {

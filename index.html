@@ -896,6 +896,8 @@
     let user = null;
     let currentDate = new Date();
     let events = {}; // { 'YYYY-MM-DD': { items: Array<{ text: string, users: string[] }>, text: string, users: string[] } }
+    let youthTeamEventsByYear = {};
+    const youthTeamYearsLoading = new Set();
     let unsubscribeSync = null;
     let syncDebounceTimer = null;
     let lastRangeKey = null;
@@ -1010,6 +1012,128 @@
       const text = items.map((item) => item.text).join('\n');
       const users = [...new Set(items.flatMap((item) => item.users))];
       return { items, text, users, lastUpdated: data.lastUpdated || '', updatedBy: data.updatedBy || '' };
+    }
+
+    function unescapeIcs(value) {
+      return String(value || '').replace(/\\n/gi, '\n').replace(/\\([\\,;])/g, '$1');
+    }
+
+    function icsDateKey(value) {
+      const match = String(value || '').match(/^(\d{4})(\d{2})(\d{2})/);
+      return match ? `${match[1]}-${match[2]}-${match[3]}` : '';
+    }
+
+    function icsTimeLabel(value) {
+      const match = String(value || '').match(/T(\d{2})(\d{2})/);
+      if (!match) return '';
+      const hour24 = Number(match[1]);
+      const suffix = hour24 >= 12 ? 'pm' : 'am';
+      const hour12 = hour24 % 12 || 12;
+      return `${hour12}.${match[2]}${suffix}`;
+    }
+
+    function parseYouthTeamCalendar(calendarText) {
+      const parsed = {};
+      const unfolded = String(calendarText || '').replace(/\r?\n[ \t]/g, '');
+      const blocks = unfolded.split('BEGIN:VEVENT').slice(1);
+
+      blocks.forEach((block) => {
+        const fields = {};
+        block.split(/\r?\n/).forEach((line) => {
+          const separator = line.indexOf(':');
+          if (separator < 0) return;
+          const key = line.slice(0, separator).split(';')[0].toUpperCase();
+          fields[key] = line.slice(separator + 1);
+        });
+
+        const uid = unescapeIcs(fields.UID || '');
+        const summary = unescapeIcs(fields.SUMMARY || 'Youth Team event');
+        const location = unescapeIcs(fields.LOCATION || '');
+        const startDate = icsDateKey(fields.DTSTART);
+        if (!startDate) return;
+
+        const isAllDay = !String(fields.DTSTART || '').includes('T');
+        let lastDate = startDate;
+        if (isAllDay && fields.DTEND) {
+          const exclusiveEnd = new Date(`${icsDateKey(fields.DTEND)}T12:00:00+08:00`);
+          exclusiveEnd.setDate(exclusiveEnd.getDate() - 1);
+          lastDate = exclusiveEnd.toLocaleDateString('en-CA', { timeZone: 'Asia/Singapore' });
+        }
+
+        const startTime = icsTimeLabel(fields.DTSTART);
+        const endTime = icsTimeLabel(fields.DTEND);
+        const isCompetition = uid.startsWith('competition-');
+        const isTrip = uid.startsWith('yangshuo-');
+        const isNoClass = /^NO CLASS/i.test(summary);
+        const prefix = isCompetition ? 'Competition — ' : isTrip ? 'Climbing trip — ' : isNoClass ? 'No climbing class — ' : 'Climbing — ';
+        const time = startTime ? `${startTime}${endTime ? `–${endTime}` : ''} · ` : '';
+        const venue = location ? ` · ${location}` : '';
+        const users = normalizeUsers(String(fields['X-TEO-USERS'] || '').split(',').filter(Boolean));
+        const item = { text: `${time}${prefix}${summary}${venue}`, users, sourceId: uid, source: 'youth-team' };
+
+        const cursor = new Date(`${startDate}T12:00:00+08:00`);
+        const end = new Date(`${lastDate}T12:00:00+08:00`);
+        while (cursor <= end) {
+          const dateKey = cursor.toLocaleDateString('en-CA', { timeZone: 'Asia/Singapore' });
+          if (!parsed[dateKey]) parsed[dateKey] = { items: [] };
+          parsed[dateKey].items.push(item);
+          cursor.setDate(cursor.getDate() + 1);
+        }
+      });
+
+      return parsed;
+    }
+
+    function youthTeamEventsForDate(dateKey) {
+      return youthTeamEventsByYear[dateKey.slice(0, 4)]?.[dateKey]?.items || [];
+    }
+
+    function samePeople(left, right) {
+      const a = normalizeUsers(left);
+      const b = normalizeUsers(right);
+      return a.some((id) => b.includes(id));
+    }
+
+    function youthItemReplacesLocal(youthItem, localItem) {
+      if (!samePeople(youthItem.users, localItem.users)) return false;
+      const youthId = String(youthItem.sourceId || '');
+      const localText = String(localItem.text || '');
+      if (youthId.startsWith('training-')) {
+        return agendaStartMinutes(youthItem.text) === agendaStartMinutes(localText)
+          && /climb|boulder|lead|youth team|training/i.test(localText);
+      }
+      if (youthId.startsWith('competition-')) {
+        const competitionName = String(youthItem.text || '').replace(/^.*Competition — /i, '').split(' · ')[0].trim();
+        return competitionName.length > 2 && localText.toLowerCase().includes(competitionName.toLowerCase());
+      }
+      if (youthId.startsWith('yangshuo-')) return /yangshuo/i.test(localText);
+      return false;
+    }
+
+    function displayEventForDate(dateKey) {
+      const local = events[dateKey] || { items: [] };
+      const youthItems = youthTeamEventsForDate(dateKey);
+      const localItems = Array.isArray(local.items) ? local.items : [];
+      if (!youthItems.length) return local;
+      const keptLocalItems = localItems.filter((localItem) => !youthItems.some((youthItem) => youthItemReplacesLocal(youthItem, localItem)));
+      const items = [...keptLocalItems, ...youthItems];
+      return { ...local, items, text: items.map((item) => item.text).join('\n'), users: [...new Set(items.flatMap((item) => item.users || []))] };
+    }
+
+    async function loadYouthTeamCalendar(year) {
+      const key = String(year);
+      if (youthTeamEventsByYear[key] || youthTeamYearsLoading.has(key)) return;
+      youthTeamYearsLoading.add(key);
+      try {
+        const response = await fetch(`/api/youth-team?year=${encodeURIComponent(key)}`, { headers: { accept: 'text/calendar' } });
+        if (!response.ok) throw new Error(`Youth Team sync returned ${response.status}`);
+        youthTeamEventsByYear[key] = parseYouthTeamCalendar(await response.text());
+        renderCalendar();
+      } catch (error) {
+        console.error('Unable to sync Youth Team calendar', error);
+      } finally {
+        youthTeamYearsLoading.delete(key);
+      }
     }
 
     function setStatus(kind, text) {
@@ -1135,6 +1259,7 @@
 
     function setupRealtimeSync() {
       const { startKey, endKey, rangeKey, cacheMonthKey } = rangeForCurrentView();
+      new Set([startKey.slice(0, 4), endKey.slice(0, 4)]).forEach((year) => loadYouthTeamCalendar(year));
 
       // If we're already listening to this exact range, don't resubscribe.
       if (rangeKey === lastRangeKey && typeof unsubscribeSync === 'function') {
@@ -1986,7 +2111,7 @@
         const d = new Date(start);
         d.setDate(start.getDate() + i);
         const dateKey = formatDateKey(d);
-        const ev = events[dateKey];
+        const ev = displayEventForDate(dateKey);
         const allItems = Array.isArray(ev?.items) ? ev.items : [];
         const filteredItems = allItems.filter((item) => {
           if (currentUserFilter === 'ALL') return true;
@@ -2158,8 +2283,8 @@
         cell.appendChild(b);
       }
 
-      if (dateKey && events[dateKey]) {
-        const ev = events[dateKey];
+      if (dateKey && (events[dateKey] || youthTeamEventsForDate(dateKey).length)) {
+        const ev = displayEventForDate(dateKey);
         const allItems = Array.isArray(ev.items) ? ev.items : [];
         const filteredItems = allItems.filter((item) => {
           if (currentUserFilter === 'ALL') return true;

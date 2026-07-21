@@ -18,6 +18,7 @@ export default async function handler(req, res) {
 
     const response = await fetch(upstreamUrl, {
       headers: { accept: "text/calendar" },
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
 
     const calendar = await response.text();
     res.setHeader("content-type", "text/calendar; charset=utf-8");
-    res.setHeader("cache-control", "s-maxage=300, stale-while-revalidate=3600");
+    res.setHeader("cache-control", "s-maxage=60, stale-while-revalidate=60");
     return res.status(200).send(calendar);
   } catch (error) {
     console.error("Unable to sync Youth Team calendar", error);

@@ -1375,6 +1375,22 @@
       if (!canEdit) return;
       const date = eventDateKey.value;
       if (!user || !date) return;
+      const itemCount = (editingItems || []).length;
+      const prettyDate = (() => {
+        try {
+          const d = new Date(date + 'T12:00:00+08:00');
+          return d.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        } catch (_) { return date; }
+      })();
+      const itemSummary = itemCount === 0
+        ? 'There are no items on this day.'
+        : itemCount === 1
+          ? 'This will remove 1 item:\n  • ' + editingItems[0].text
+          : `This will remove all ${itemCount} items on this day.`;
+      const ok = window.confirm(
+        `Clear everything for ${prettyDate}?\n\n${itemSummary}\n\nThis cannot be undone.`
+      );
+      if (!ok) return;
       await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'events', date));
       closeModal();
     }

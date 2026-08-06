@@ -1230,7 +1230,11 @@
     }
 
     function cacheKeyForMonth(monthKey) {
-      return `teo-calendar:${APP_ID}:events:${monthKey}`;
+      // Bump CACHE_VERSION whenever a deploy needs to invalidate all client-side
+      // month caches (e.g. when cancelling events by editing Firestore directly
+      // outside the UI). v3: Ignite clamp — cancel stale 21/23 Aug entries.
+      const CACHE_VERSION = 'v3';
+      return `teo-calendar:${APP_ID}:events:${CACHE_VERSION}:${monthKey}`;
     }
 
     function loadMonthCache(monthKey) {

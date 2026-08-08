@@ -1079,6 +1079,8 @@
         const SKIPPED_YOUTH_UIDS = [
           // Ignite was a 3-day competition 21–23 Aug; keeping only 22nd.
           { uid: 'competition-ignite-2026-08-21@youthteam.bffclimb.com', dates: ['2026-08-21', '2026-08-23'] },
+          // Jovan can't make Monday Youth Team on 17 Aug (one-off).
+          { uid: 'training-mon-youth-2026-08-17@youthteam.bffclimb.com', dates: ['2026-08-17'] },
         ];
 
         const cursor = new Date(`${startDate}T12:00:00+08:00`);
@@ -1245,8 +1247,8 @@
     function cacheKeyForMonth(monthKey) {
       // Bump CACHE_VERSION whenever a deploy needs to invalidate all client-side
       // month caches (e.g. when cancelling events by editing Firestore directly
-      // outside the UI). v4: Ignite skip list — only keep 22 Aug.
-      const CACHE_VERSION = 'v4';
+      // outside the UI). v5: also skip Monday Youth Team on 17 Aug (Jovan one-off).
+      const CACHE_VERSION = 'v5';
       return `teo-calendar:${APP_ID}:events:${CACHE_VERSION}:${monthKey}`;
     }
 

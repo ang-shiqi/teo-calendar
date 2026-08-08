@@ -1083,6 +1083,15 @@
           { uid: 'training-mon-youth-2026-08-17@youthteam.bffclimb.com', dates: ['2026-08-17'] },
           // Jovan can't make Monday Youth Team on 28 Sep (one-off).
           { uid: 'training-mon-youth-2026-09-28@youthteam.bffclimb.com', dates: ['2026-09-28'] },
+          // Perth trip 30 Sep – 13 Oct: family away, block all youth-team sessions.
+          { uid: 'training-thu-youth-2026-10-01@youthteam.bffclimb.com', dates: ['2026-10-01'] },
+          { uid: 'training-sat-youth-2026-10-03@youthteam.bffclimb.com', dates: ['2026-10-03'] },
+          { uid: 'training-sun-youth-2026-10-04@youthteam.bffclimb.com', dates: ['2026-10-04'] },
+          { uid: 'training-mon-youth-2026-10-05@youthteam.bffclimb.com', dates: ['2026-10-05'] },
+          { uid: 'training-thu-youth-2026-10-08@youthteam.bffclimb.com', dates: ['2026-10-08'] },
+          { uid: 'training-sat-youth-2026-10-10@youthteam.bffclimb.com', dates: ['2026-10-10'] },
+          { uid: 'training-sun-youth-2026-10-11@youthteam.bffclimb.com', dates: ['2026-10-11'] },
+          { uid: 'training-mon-youth-2026-10-12@youthteam.bffclimb.com', dates: ['2026-10-12'] },
         ];
 
         const cursor = new Date(`${startDate}T12:00:00+08:00`);
@@ -1249,8 +1258,8 @@
     function cacheKeyForMonth(monthKey) {
       // Bump CACHE_VERSION whenever a deploy needs to invalidate all client-side
       // month caches (e.g. when cancelling events by editing Firestore directly
-      // outside the UI). v6: also skip Monday Youth Team on 28 Sep (Jovan one-off).
-      const CACHE_VERSION = 'v6';
+      // outside the UI). v7: Perth trip wipe 30 Sep – 13 Oct.
+      const CACHE_VERSION = 'v7';
       return `teo-calendar:${APP_ID}:events:${CACHE_VERSION}:${monthKey}`;
     }
 

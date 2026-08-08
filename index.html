@@ -1092,6 +1092,11 @@
           { uid: 'training-sat-youth-2026-10-10@youthteam.bffclimb.com', dates: ['2026-10-10'] },
           { uid: 'training-sun-youth-2026-10-11@youthteam.bffclimb.com', dates: ['2026-10-11'] },
           { uid: 'training-mon-youth-2026-10-12@youthteam.bffclimb.com', dates: ['2026-10-12'] },
+          // Asher's Tiny classes also blocked during Perth trip.
+          { uid: 'training-sat-tiny-2026-10-03@youthteam.bffclimb.com', dates: ['2026-10-03'] },
+          { uid: 'training-tue-tiny-2026-10-06@youthteam.bffclimb.com', dates: ['2026-10-06'] },
+          { uid: 'training-sat-tiny-2026-10-10@youthteam.bffclimb.com', dates: ['2026-10-10'] },
+          { uid: 'training-tue-tiny-2026-10-13@youthteam.bffclimb.com', dates: ['2026-10-13'] },
         ];
 
         const cursor = new Date(`${startDate}T12:00:00+08:00`);
@@ -1258,8 +1263,8 @@
     function cacheKeyForMonth(monthKey) {
       // Bump CACHE_VERSION whenever a deploy needs to invalidate all client-side
       // month caches (e.g. when cancelling events by editing Firestore directly
-      // outside the UI). v7: Perth trip wipe 30 Sep – 13 Oct.
-      const CACHE_VERSION = 'v7';
+      // outside the UI). v8: also block Asher's Tiny classes during Perth trip.
+      const CACHE_VERSION = 'v8';
       return `teo-calendar:${APP_ID}:events:${CACHE_VERSION}:${monthKey}`;
     }
 

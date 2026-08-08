@@ -1071,12 +1071,25 @@
         const users = normalizeUsers(String(fields['X-TEO-USERS'] || '').split(',').filter(Boolean));
         const item = { text: `${time}${prefix}${summary}${venue}`, users, sourceId: uid, source: 'youth-team' };
 
+        // Per-UID skip list: blocks specific youth-team events from showing on
+        // specific dates. Each entry matches the youth-team event's UID plus
+        // the date keys (Asia/Singapore) on which to suppress it. Matched
+        // entries are dropped entirely so they don't merge with the local
+        // events feed.
+        const SKIPPED_YOUTH_UIDS = [
+          // Ignite was a 3-day competition 21–23 Aug; keeping only 22nd.
+          { uid: 'competition-ignite-2026-08-21@youthteam.bffclimb.com', dates: ['2026-08-21', '2026-08-23'] },
+        ];
+
         const cursor = new Date(`${startDate}T12:00:00+08:00`);
         const end = new Date(`${lastDate}T12:00:00+08:00`);
         while (cursor <= end) {
           const dateKey = cursor.toLocaleDateString('en-CA', { timeZone: 'Asia/Singapore' });
-          if (!parsed[dateKey]) parsed[dateKey] = { items: [] };
-          parsed[dateKey].items.push(item);
+          const skip = SKIPPED_YOUTH_UIDS.find((s) => s.uid === uid && s.dates.includes(dateKey));
+          if (!skip) {
+            if (!parsed[dateKey]) parsed[dateKey] = { items: [] };
+            parsed[dateKey].items.push(item);
+          }
           cursor.setDate(cursor.getDate() + 1);
         }
       });
@@ -1232,8 +1245,8 @@
     function cacheKeyForMonth(monthKey) {
       // Bump CACHE_VERSION whenever a deploy needs to invalidate all client-side
       // month caches (e.g. when cancelling events by editing Firestore directly
-      // outside the UI). v3: Ignite clamp — cancel stale 21/23 Aug entries.
-      const CACHE_VERSION = 'v3';
+      // outside the UI). v4: Ignite skip list — only keep 22 Aug.
+      const CACHE_VERSION = 'v4';
       return `teo-calendar:${APP_ID}:events:${CACHE_VERSION}:${monthKey}`;
     }
 
